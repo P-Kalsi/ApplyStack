@@ -1,0 +1,150 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Copy, Download, Pencil, Printer, Trash2 } from "lucide-react";
+import type { ResumeVersionRow } from "@/lib/types";
+import { Badge, ScoreBadge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Confirm } from "@/components/ui/confirm";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
+import { formatDate } from "@/lib/utils";
+import { deleteVersion, duplicateVersion, renameVersion } from "./actions";
+
+export function downloadTex(name: string, content: string) {
+  const blob = new Blob([content], { type: "application/x-tex" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${name.replace(/[^a-z0-9-_ ]/gi, "").trim().replace(/\s+/g, "_") || "resume"}.tex`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+export function VersionCard({ version }: { version: ResumeVersionRow }) {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [renaming, setRenaming] = useState(false);
+  const [name, setName] = useState(version.name);
+  const [busy, setBusy] = useState(false);
+
+  const saveName = async () => {
+    setBusy(true);
+    try {
+      const res = await renameVersion(version.id, name);
+      toast(res.message, res.ok ? "success" : "error");
+      if (res.ok) {
+        setRenaming(false);
+        router.refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <article className="flex flex-col gap-2 rounded-lg border border-line bg-surface-raised p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          {renaming ? (
+            <div className="flex gap-1.5">
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="h-7 text-xs"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void saveName();
+                  if (e.key === "Escape") setRenaming(false);
+                }}
+                aria-label="Version name"
+              />
+              <Button size="sm" variant="primary" onClick={saveName} loading={busy}>
+                Save
+              </Button>
+            </div>
+          ) : (
+            <Link
+              href={`/tailor/review/${version.id}`}
+              className="line-clamp-1 text-sm font-semibold text-ink hover:text-accent"
+            >
+              {version.name}
+            </Link>
+          )}
+          <p className="mt-0.5 text-2xs text-ink-faint">
+            {version.company || "No company"} · generated {formatDate(version.created_at)}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Badge tone={version.status === "final" ? "good" : "neutral"}>{version.status}</Badge>
+          <ScoreBadge score={version.match_score_after} label="Match score after tailoring" />
+        </div>
+      </div>
+
+      {version.skills_emphasized.length ? (
+        <p className="text-2xs text-ink-muted">
+          Emphasized: {version.skills_emphasized.slice(0, 6).join(", ")}
+        </p>
+      ) : null}
+
+      <div className="mt-auto flex flex-wrap items-center gap-1 pt-1">
+        <Link
+          href={`/tailor/review/${version.id}`}
+          className="inline-flex h-7 items-center rounded-md bg-accent px-2.5 text-xs font-medium text-accent-ink hover:bg-accent-hover"
+        >
+          Review changes
+        </Link>
+        <Button size="sm" variant="ghost" onClick={() => setRenaming(true)} aria-label="Rename">
+          <Pencil className="h-3.5 w-3.5" aria-hidden />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label="Duplicate"
+          title="Duplicate this version"
+          onClick={async () => {
+            const res = await duplicateVersion(version.id);
+            toast(res.message, res.ok ? "success" : "error");
+            router.refresh();
+          }}
+        >
+          <Copy className="h-3.5 w-3.5" aria-hidden />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label="Download .tex"
+          title="Download LaTeX source"
+          onClick={() => downloadTex(version.name, version.latex_content)}
+        >
+          <Download className="h-3.5 w-3.5" aria-hidden />
+        </Button>
+        <Link
+          href={`/tailor/print/${version.id}`}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-muted hover:bg-surface-sunken hover:text-ink"
+          aria-label="Print view"
+          title="Print / save as PDF"
+        >
+          <Printer className="h-3.5 w-3.5" aria-hidden />
+        </Link>
+        <Confirm
+          title={`Delete "${version.name}"?`}
+          description="The version and its change history are removed permanently."
+          onConfirm={async () => {
+            const res = await deleteVersion(version.id);
+            toast(res.message, res.ok ? "success" : "error");
+            router.refresh();
+          }}
+        >
+          <Button size="sm" variant="ghost" aria-label="Delete">
+            <Trash2 className="h-3.5 w-3.5 text-bad" aria-hidden />
+          </Button>
+        </Confirm>
+      </div>
+    </article>
+  );
+}
