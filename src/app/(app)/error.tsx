@@ -18,8 +18,8 @@ export default function AppError({
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-bad/30 bg-bad/5 px-6 py-16 text-center">
       <AlertTriangle className="h-6 w-6 text-bad" aria-hidden />
-      <h2 className="text-sm font-semibold text-ink">Something went wrong</h2>
-      <p className="max-w-md text-xs text-ink-muted">
+      <h2 className="text-base font-semibold tracking-tight text-ink">Something went wrong</h2>
+      <p className="max-w-md break-words text-sm text-ink-muted">
         {error.message || "An unexpected error occurred while rendering this page."}
       </p>
       <Button variant="secondary" size="sm" onClick={reset}>
