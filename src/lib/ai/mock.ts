@@ -6,7 +6,7 @@
 
 import type { JobRow, VaultSnapshot } from "../types";
 import { computeMatch, vaultSkillSet } from "../matching/score";
-import { rankExperiences, rankProjects, selectRelevantFacts } from "../matching/relevance";
+import { rankExperiences, rankProjects } from "../matching/relevance";
 import { canonicalSkill, extractSkills } from "../jobs/skills";
 import type { BulletBlock } from "../resume/latex";
 import { latexToPlain } from "../resume/latex";

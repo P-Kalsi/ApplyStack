@@ -10,6 +10,8 @@ import { getBullets, parseResume, type BulletBlock } from "../resume/latex";
 import { applyChangesToLatex } from "../resume/apply-changes";
 import { guardTailorChanges, sanitizeMatchReport, type GuardResult } from "./guard";
 import { mockAnalyzeJob, mockMatchReport, mockTailor } from "./mock";
+import { aiEnabled, callStructured } from "./run";
+import { jobAnalysisPrompt, matchPrompt, tailorPrompt } from "./prompts";
 import {
   JobAnalysisSchema,
   MatchReportSchema,
@@ -22,7 +24,6 @@ import {
 export type EngineKind = "anthropic" | "mock";
 
 async function withAi<T>(real: () => Promise<T>, mock: () => T): Promise<{ data: T; engine: EngineKind }> {
-  const { aiEnabled } = await import("./run.js");
   if (!aiEnabled()) return { data: mock(), engine: "mock" };
   try {
     return { data: await real(), engine: "anthropic" };
@@ -35,10 +36,6 @@ async function withAi<T>(real: () => Promise<T>, mock: () => T): Promise<{ data:
 export async function runJobAnalysis(job: JobRow): Promise<{ data: JobAnalysis; engine: EngineKind }> {
   return withAi(
     async () => {
-      const [{ callStructured }, { jobAnalysisPrompt }] = await Promise.all([
-        import("./run.js"),
-        import("./prompts.js"),
-      ]);
       return callStructured(JobAnalysisSchema, jobAnalysisPrompt(job));
     },
     () => mockAnalyzeJob(job)
@@ -57,10 +54,6 @@ export async function runMatchReport(
 
   const { data, engine } = await withAi(
     async () => {
-      const [{ callStructured }, { matchPrompt }] = await Promise.all([
-        import("./run.js"),
-        import("./prompts.js"),
-      ]);
       return callStructured(
         MatchReportSchema,
         matchPrompt(job, analysis, facts, projects, experiences, skills)
@@ -108,10 +101,6 @@ export async function runTailorPipeline(
   // STEP 4-6: propose content changes (model or mock).
   const { data, engine } = await withAi(
     async () => {
-      const [{ callStructured }, { tailorPrompt }] = await Promise.all([
-        import("./run.js"),
-        import("./prompts.js"),
-      ]);
       return callStructured(TailorResultSchema, tailorPrompt(job, analysis, facts, bullets, skills));
     },
     () => mockTailor(job, vault, bullets)

@@ -5,6 +5,8 @@ import type { JobRow, JobSourceRow } from "../types";
 import { dedupeJobs } from "../jobs/dedupe";
 import type { NormalizedJob } from "../jobs/normalize";
 import { mergeSources, sourcesFromEnv, type CompanySource } from "../jobs/registry";
+import { fetchGreenhouseJobs } from "../jobs/adapters/greenhouse";
+import { fetchLeverJobs } from "../jobs/adapters/lever";
 
 export interface JobFilters {
   q?: string;
@@ -94,10 +96,8 @@ export async function ingestJobs(
     sources.map(async (source): Promise<NormalizedJob[]> => {
       try {
         if (source.kind === "greenhouse") {
-          const { fetchGreenhouseJobs } = await import("../jobs/adapters/greenhouse");
           return await fetchGreenhouseJobs(source.token, source.label);
         }
-        const { fetchLeverJobs } = await import("../jobs/adapters/lever");
         return await fetchLeverJobs(source.token, source.label);
       } catch (err) {
         errors.push(err instanceof Error ? err.message : String(err));
