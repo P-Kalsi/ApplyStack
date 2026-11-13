@@ -28,3 +28,7 @@ npm-debug.log*
 # per-user AI backend choice (contains no secrets, but is personal)
 applystack.config.json
 .applystack-alerts.json
+
+# Local Claude skills (kept on this computer, not in the project history)
+.claude/
+skills-lock.json
