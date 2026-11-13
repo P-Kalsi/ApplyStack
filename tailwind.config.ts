@@ -31,11 +31,22 @@ const config: Config = {
         bad: "rgb(var(--bad) / <alpha-value>)",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       fontSize: {
-        "2xs": ["0.6875rem", { lineHeight: "1rem" }],
+        // Badge labels only; content text is 12px (text-xs) or larger.
+        "2xs": ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.01em" }],
+        // Page titles (h1).
+        title: ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.02em", fontWeight: "600" }],
+      },
+      borderRadius: {
+        // Controls 6px, cards 8px (rounded-md / rounded-lg); kept explicit for DESIGN.md.
+        md: "6px",
+        lg: "8px",
+      },
+      boxShadow: {
+        overlay: "0 8px 30px rgb(0 0 0 / 0.12), 0 0 0 1px rgb(var(--line))",
       },
     },
   },
