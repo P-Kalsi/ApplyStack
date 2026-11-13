@@ -67,12 +67,10 @@ Requires Node 22+ (the AI SDK needs it).
 ### 2. Create a Supabase project
 
 1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
-2. In the SQL editor, run in order:
-   - `supabase/migrations/0001_schema.sql`
-   - `supabase/migrations/0002_rls.sql`
-   - `supabase/migrations/0003_docx_resumes.sql`
-   - `supabase/migrations/0004_llm_backends.sql`
-   - `supabase/seed.sql` (optional but recommended — seeds 14 realistic internships)
+2. In the SQL editor, paste and run `supabase/setup_all.sql` once. It is migrations 0001–0005
+   in order (schema, row-level security, Word resumes, AI backends, table grants), so it works
+   whether or not "Automatically expose new tables" is on.
+   `supabase/seed.sql` adds 14 sample internships from fictional companies; skip it for real use.
 3. (Optional, for local dev convenience) Authentication → Providers → Email → disable
    "Confirm email" so signup works without an SMTP setup.
 
