@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { requireUser } from "@/lib/supabase/server";
 import { Card, CardHeader } from "@/components/ui/card";
 import { NewJobForm } from "./new-job-form";
+import { BookmarkletCard } from "./bookmarklet-card";
 
 export const metadata: Metadata = { title: "Add job" };
 
@@ -17,9 +18,13 @@ export default async function NewJobPage() {
       <Card>
         <CardHeader
           title="Add a job"
-          description="For postings from any site. Greenhouse, Lever, Ashby and Workday links fill in automatically with Fill from link. Indeed, LinkedIn and other sites don't offer a public way for apps to read their postings, so paste the link, type the company and title, and copy the description from the posting."
+          description="From any site, including LinkedIn and Indeed: paste the whole page below, or use the Send to ApplyStack bookmark. Greenhouse, Lever, Ashby and Workday links can also fill in from the link alone."
         />
         <NewJobForm />
+      </Card>
+      <Card>
+        <CardHeader title="Send to ApplyStack bookmark" description="One click from a LinkedIn or Indeed job to this page." />
+        <BookmarkletCard />
       </Card>
     </div>
   );

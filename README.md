@@ -148,6 +148,28 @@ time: **Show 10 / 25 / 50 per page**, Prev / page numbers / Next, and "Showing 1
   (`status()` and `fetchWindow(query, offset, limit)`), add it to `ALL_SOURCES` in
   `src/lib/jobs/sources/index.ts`, and add its badge name in `badges.ts`.
 
+## Adding jobs from LinkedIn, Indeed or any site
+
+LinkedIn and Indeed have no public API, and ApplyStack never scrapes them. Instead you hand it the
+job you're already looking at:
+
+- **Paste the whole page:** on the job page press Ctrl+A, Ctrl+C, then Discover → **Add job** →
+  paste → **Find the job in this text**.
+- **Send to ApplyStack bookmark:** on the Add job page, drag the button to your bookmarks bar. On
+  a LinkedIn or Indeed job, click it: it reads the job header and description already on your
+  screen (or your text selection) and opens Add job with it. The text travels in the URL's `#`
+  part, which browsers never send to a server, and the bookmark never loads anything from LinkedIn
+  or Indeed itself. LinkedIn's terms discourage tools that copy its content, so use it one job at
+  a time for jobs you're reading.
+
+Either way, your AI backend (fast model) only *locates* the company, title, location and the first
+and last words of the description. ApplyStack checks each value against the page text (anything
+not on the page is left blank) and cuts the description out of the original text word for word.
+Offline, it falls back to the tab title and the page's "About the job" / "Full job description"
+section. You review everything before **Add job**. Links are normalised to one per job
+(`linkedin.com/jobs/view/<id>/`, `indeed.com/viewjob?jk=<id>`), so sending a job twice updates it,
+and the card gets a LinkedIn / Indeed badge (under **Added by you** in Discover).
+
 ## Job descriptions and Discord alerts
 
 **Descriptions.** Simplify and Adzuna listings arrive without a full description, and tailoring needs one:

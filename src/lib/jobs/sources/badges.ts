@@ -6,6 +6,9 @@ export const SOURCE_BADGES: Record<string, string> = {
   greenhouse: "Greenhouse",
   lever: "Lever",
   manual: "Added by you",
+  linkedin: "LinkedIn",
+  indeed: "Indeed",
+  glassdoor: "Glassdoor",
   seed: "Sample",
 };
 

@@ -6,6 +6,8 @@ import { createClient, requireUser } from "@/lib/supabase/server";
 import { explainDbError, getJob } from "@/lib/db/jobs";
 import { buildNormalizedJob, descriptionPatch } from "@/lib/jobs/normalize";
 import { fetchPosting, type FetchedPosting } from "@/lib/jobs/posting";
+import { canonicalJobUrl, MAX_CAPTURE_CHARS, siteOf, type ExtractedJob } from "@/lib/jobs/page-import";
+import { extractJobFromPage } from "@/lib/ai/page-extract";
 import { loadVaultSnapshot } from "@/lib/db/vault";
 import { runJobAnalysis, runMatchReport } from "@/lib/ai/engine";
 import { assertLlmReady } from "@/lib/ai/llm";
@@ -150,21 +152,24 @@ export async function createManualJob(
     await requireUser();
     const data = ManualJobSchema.parse(input);
     const supabase = await createClient();
+    const url = data.url ? canonicalJobUrl(data.url) : null;
     const job = buildNormalizedJob({
-      source: "manual",
+      // LinkedIn / Indeed / Glassdoor links get their own badge; anything else is "Added by you".
+      source: (url && siteOf(url)) || "manual",
       company: data.company,
       title: data.title,
       location: data.location || null,
-      url: data.url || null,
+      url,
       description_html: data.description_html || null,
       description_text: data.description,
       posted_at: new Date().toISOString(),
     });
-    const { data: existing } = await supabase
-      .from("jobs")
-      .select("id")
-      .eq("dedupe_key", job.dedupe_key)
-      .maybeSingle();
+    // Same job sent twice (same link, or same company/title/location): update it.
+    const { data: byKey } = await supabase.from("jobs").select("id").eq("dedupe_key", job.dedupe_key).maybeSingle();
+    const { data: byUrl } = url && !byKey
+      ? await supabase.from("jobs").select("id").eq("url", url).limit(1).maybeSingle()
+      : { data: null };
+    const existing = byKey ?? byUrl;
     if (existing) {
       // Same company/title/location/link already on the board: refresh its description.
       await supabase
@@ -181,5 +186,33 @@ export async function createManualJob(
   } catch (err) {
     if (err instanceof z.ZodError) return { ok: false, message: err.issues[0]?.message ?? "Check the form." };
     return { ok: false, message: err instanceof Error ? err.message : "Couldn't add the job." };
+  }
+}
+
+const CaptureSchema = z.object({
+  url: z.string().trim().max(4000).optional().default(""),
+  title: z.string().max(1000).optional().default(""),
+  text: z
+    .string()
+    .min(80, "That's too short to be a job posting. Copy the whole page (Ctrl+A, Ctrl+C) and paste it.")
+    .max(MAX_CAPTURE_CHARS * 2),
+});
+
+/**
+ * Paste import and the Send to ApplyStack bookmark: find the job in copied
+ * page text so you can review it before adding. Nothing is saved here.
+ */
+export async function importJobFromPage(
+  input: z.input<typeof CaptureSchema>
+): Promise<{ ok: true; job: ExtractedJob } | { ok: false; message: string }> {
+  try {
+    await requireUser();
+    const c = CaptureSchema.parse(input);
+    const url = /^https?:\/\//i.test(c.url) ? c.url : "";
+    const job = await extractJobFromPage({ url, title: c.title, text: c.text.slice(0, MAX_CAPTURE_CHARS) });
+    return { ok: true, job };
+  } catch (err) {
+    if (err instanceof z.ZodError) return { ok: false, message: err.issues[0]?.message ?? "Couldn't read that." };
+    return { ok: false, message: err instanceof Error ? err.message : "Couldn't read that page." };
   }
 }
