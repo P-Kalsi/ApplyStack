@@ -33,6 +33,14 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const user = await requireUser();
   const supabase = await createClient();
 
+  const answersPromise = supabase
+    .from("application_answers")
+    .select("id, question, answer")
+    .eq("user_id", user.id)
+    .eq("job_id", id)
+    .order("updated_at", { ascending: false })
+    .limit(20)
+    .then((r) => (r.error ? [] : ((r.data || []) as { id: string; question: string; answer: string }[])));
   const [job, vault, analysisRow] = await Promise.all([
     getJob(supabase, id),
     loadVaultSnapshot(supabase, user.id),
@@ -46,6 +54,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   ]);
   if (!job) notFound();
 
+  const answers = await answersPromise;
   const match = computeMatch(job, vault);
   const analysis = (analysisRow?.analysis ?? null) as JobAnalysis | null;
   const report = (analysisRow?.match_report ?? null) as MatchReport | null;
@@ -288,6 +297,32 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               ? "Not analyzed yet. Run the analysis to get structured requirements, a guarded match score, and keyword-level evidence."
               : "Add the job description first (left), then analyze and tailor."}
           </div>
+        )}
+      </Card>
+      <Card>
+        <CardHeader
+          title="Application answers"
+          description="Screening questions you've answered for this job, from your Career Vault."
+          actions={
+            <Link
+              href={`/answers?job=${job.id}`}
+              className="inline-flex h-8 items-center rounded-md border border-line bg-surface-raised px-3 text-xs font-medium text-ink hover:border-line-strong"
+            >
+              Answer a question
+            </Link>
+          }
+        />
+        {answers.length ? (
+          <ul className="divide-y divide-line px-4">
+            {answers.map((a) => (
+              <li key={a.id} className="space-y-0.5 py-2.5">
+                <p className="text-xs text-ink-muted">{a.question}</p>
+                <p className="whitespace-pre-line text-sm text-ink">{a.answer}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-4 py-4 text-sm text-ink-muted">None yet. Answers you save for this job show up here.</p>
         )}
       </Card>
     </div>

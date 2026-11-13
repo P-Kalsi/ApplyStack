@@ -67,11 +67,11 @@ Requires Node 22+ (the AI SDK needs it).
 ### 2. Create a Supabase project
 
 1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
-2. In the SQL editor, paste and run `supabase/setup_all.sql` once. It is migrations 0001–0007
+2. In the SQL editor, paste and run `supabase/setup_all.sql` once. It is migrations 0001–0008
    in order (schema, row-level security, Word resumes, AI backends, table grants, internship
-   feed, pluggable sources), so it works whether or not "Automatically expose new tables" is on.
+   feed, pluggable sources, application answers), so it works whether or not "Automatically expose new tables" is on.
    Already set up with an older `setup_all.sql`? Run only the migrations you haven't run yet
-   (e.g. `0006_simplify_feed.sql`, then `0007_pluggable_sources.sql`).
+   (e.g. `0006_simplify_feed.sql`, `0007_pluggable_sources.sql`, then `0008_application_answers.sql`).
    `supabase/seed.sql` adds 14 sample internships from fictional companies; skip it for real use.
 3. (Optional, for local dev convenience) Authentication → Providers → Email → disable
    "Confirm email" so signup works without an SMTP setup.
@@ -169,6 +169,24 @@ Offline, it falls back to the tab title and the page's "About the job" / "Full j
 section. You review everything before **Add job**. Links are normalised to one per job
 (`linkedin.com/jobs/view/<id>/`, `indeed.com/viewjob?jk=<id>`), so sending a job twice updates it,
 and the card gets a LinkedIn / Indeed badge (under **Added by you** in Discover).
+
+## Answers: application screening questions
+
+**Answers** (in the nav, or **Answer a question** on any job page) drafts answers to screening
+questions from your Career Vault only:
+
+- Paste the question and the box's character limit, optionally pick the job. You get 2–3 drafts
+  that fit the limit, each citing the facts it used ("Based on N facts"). For dropdown or
+  multiple-choice questions, tick the box, list the options, and it suggests one with a reason
+  (years of experience counted from your dated roles and projects; skill ratings kept honest).
+- Every draft is checked: over the limit, a technology that isn't in your vault, or a number that
+  isn't in your facts is shown in red. Questions your vault can't support (work authorization,
+  salary, a skill with no evidence) say what's missing instead of guessing, with **I have done
+  this: add a fact** to add it in your own words and draft again.
+- **Use this** saves the answer to your **answer bank** (linked to the job, shown on its page);
+  similar questions later show your earlier answers first. Short and multiple-choice questions use
+  the fast model, longer ones the smart model.
+- Needs `supabase/migrations/0008_application_answers.sql` to save answers.
 
 ## Job descriptions and Discord alerts
 

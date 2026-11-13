@@ -33,6 +33,7 @@ const DEFAULTS: Record<string, Row> = {
   resume_changes: { change_type: "rewrite", fact_ids: [], keywords: [], is_safe: true, status: "proposed" },
   applications: { status: "saved", sort_order: 0 },
   job_sources: { enabled: true },
+  application_answers: { kind: "text", char_limit: null, job_id: null, fact_ids: [] },
 };
 
 // child table -> [fk column, parent table, on delete]
@@ -48,6 +49,7 @@ const FOREIGN_KEYS: Record<string, [string, string, "cascade" | "set null"][]> =
     ["job_id", "jobs", "set null"],
   ],
   resume_changes: [["resume_version_id", "resume_versions", "cascade"]],
+  application_answers: [["job_id", "jobs", "set null"]],
   applications: [
     ["job_id", "jobs", "set null"],
     ["resume_version_id", "resume_versions", "set null"],

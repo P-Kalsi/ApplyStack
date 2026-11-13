@@ -13,6 +13,7 @@ import {
   Layers,
   LogOut,
   Menu,
+  MessageSquareText,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ const items = [
   { href: "/saved", label: "Saved Jobs", icon: Bookmark },
   { href: "/applications", label: "Applications", icon: Briefcase },
   { href: "/tailor", label: "Resume Tailor", icon: FileText },
+  { href: "/answers", label: "Answers", icon: MessageSquareText },
   { href: "/vault", label: "Career Vault", icon: Database },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
