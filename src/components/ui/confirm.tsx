@@ -44,7 +44,7 @@ export function Confirm({
       </span>
       {open ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-black/50 p-4 backdrop-blur-[2px]"
           onClick={() => setOpen(false)}
           role="presentation"
         >
@@ -52,12 +52,12 @@ export function Confirm({
             role="alertdialog"
             aria-modal="true"
             aria-label={title}
-            className="w-full max-w-sm rounded-lg border border-line bg-surface-raised p-4 shadow-xl"
+            className="w-full max-w-sm rounded-lg border border-line bg-surface-raised p-5 shadow-overlay"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-sm font-semibold text-ink">{title}</h3>
-            {description ? <p className="mt-1 text-xs text-ink-muted">{description}</p> : null}
-            <div className="mt-4 flex justify-end gap-2">
+            <h3 className="text-base font-semibold tracking-tight text-ink">{title}</h3>
+            {description ? <p className="mt-1.5 text-sm leading-5 text-ink-muted">{description}</p> : null}
+            <div className="mt-5 flex justify-end gap-2">
               <Button ref={cancelRef} variant="ghost" size="sm" onClick={() => setOpen(false)}>
                 Cancel
               </Button>

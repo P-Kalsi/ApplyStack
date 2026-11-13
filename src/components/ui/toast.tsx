@@ -62,25 +62,25 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2"
+        className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 flex w-[calc(100vw-2rem)] flex-col gap-2 sm:w-80"
       >
         {toasts.map((t) => (
           <div
             key={t.id}
             role="status"
             className={cn(
-              "pointer-events-auto flex items-start gap-2 rounded-lg border bg-surface-raised px-3 py-2.5 shadow-lg",
-              t.kind === "error" ? "border-bad/40" : t.kind === "success" ? "border-good/40" : "border-line-strong"
+              "pointer-events-auto flex items-start gap-2.5 rounded-lg border bg-surface-raised py-3 pl-3 pr-2 shadow-overlay",
+              t.kind === "error" ? "border-bad/40" : t.kind === "success" ? "border-good/40" : "border-line"
             )}
           >
-            {icons[t.kind]}
-            <p className="flex-1 text-xs leading-5 text-ink">{t.message}</p>
+            <span className="mt-0.5 shrink-0">{icons[t.kind]}</span>
+            <p className="min-w-0 flex-1 break-words text-sm leading-5 text-ink">{t.message}</p>
             <button
               onClick={() => dismiss(t.id)}
-              className="text-ink-faint hover:text-ink"
+              className="-my-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-faint hover:bg-surface-sunken hover:text-ink"
               aria-label="Dismiss notification"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-3.5 w-3.5" aria-hidden />
             </button>
           </div>
         ))}

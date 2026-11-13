@@ -8,7 +8,7 @@ const tones: Record<Tone, string> = {
   good: "bg-good/10 text-good border-good/25",
   warn: "bg-warn/10 text-warn border-warn/25",
   bad: "bg-bad/10 text-bad border-bad/25",
-  outline: "bg-transparent text-ink-faint border-line",
+  outline: "bg-transparent text-ink-muted border-line-strong",
 };
 
 export function Badge({
@@ -26,7 +26,7 @@ export function Badge({
     <span
       title={title}
       className={cn(
-        "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-2xs font-medium leading-4",
+        "inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full border px-2 py-px text-2xs font-medium",
         tones[tone],
         className
       )}

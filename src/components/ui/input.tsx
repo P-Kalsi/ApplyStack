@@ -4,8 +4,12 @@ import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes, type
 import { cn } from "@/lib/utils";
 
 const fieldClasses =
-  "rounded-md border border-line bg-surface-raised px-2.5 text-sm text-ink placeholder:text-ink-faint " +
-  "focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/60 disabled:opacity-50";
+  "rounded-md border border-line-strong bg-surface-raised px-3 text-sm text-ink placeholder:text-ink-faint " +
+  "transition-[border-color,box-shadow] duration-150 hover:border-ink-faint/60 " +
+  "focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/25 " +
+  "disabled:cursor-not-allowed disabled:bg-surface-sunken disabled:opacity-60 " +
+  // Touch: 44px targets and 16px text so iOS doesn't zoom on focus.
+  "[@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:text-base";
 
 /** Full width unless the caller sets its own width (w-40, min-w-..., etc.). */
 function widthFor(className?: string): string {
@@ -49,7 +53,7 @@ export function Label({
   className?: string;
 }) {
   return (
-    <label htmlFor={htmlFor} className={cn("block text-xs font-medium text-ink-muted mb-1", className)}>
+    <label htmlFor={htmlFor} className={cn("mb-1.5 block text-xs font-medium text-ink", className)}>
       {children}
     </label>
   );
