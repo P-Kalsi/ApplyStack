@@ -85,36 +85,41 @@ export function DiscoverFilters({ sources }: { sources: SourceOption[] }) {
   const sourceInfo = sources.find((s) => s.id === source);
 
   return (
-    <div className="no-print space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint" />
+    <div className="no-print space-y-3">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+        <div className="relative col-span-2 min-w-[200px] sm:flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" aria-hidden />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={onEnter}
             onBlur={commitText}
             placeholder="Search title, company, keywords… (Enter)"
-            className="pl-8"
+            className="pl-9"
             aria-label="Search jobs"
+            type="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            spellCheck={false}
           />
         </div>
         <div className="relative">
-          <MapPin className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint" />
+          <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" aria-hidden />
           <Input
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             onKeyDown={onEnter}
             onBlur={commitText}
             placeholder="Anywhere"
-            className="w-44 pl-8"
+            className="w-full pl-9 sm:w-44"
             aria-label="Location"
+            autoComplete="off"
           />
         </div>
         <Select
           value={select("radius", String(DEFAULT_RADIUS_KM))}
           onChange={(e) => setSelect("radius", String(DEFAULT_RADIUS_KM))(e.target.value)}
-          className="w-40"
+          className="w-full sm:w-40"
           aria-label="Radius"
           title="Adzuna searches this radius. Other sources match the city and its metro area."
         >
@@ -124,15 +129,14 @@ export function DiscoverFilters({ sources }: { sources: SourceOption[] }) {
             </option>
           ))}
         </Select>
-        <Select value={work} onChange={(e) => setSelect("work", "both")(e.target.value)} className="w-40" aria-label="Remote or local">
+        <Select value={work} onChange={(e) => setSelect("work", "both")(e.target.value)} className="w-full sm:w-40" aria-label="Remote or local">
           <option value="both">Local + remote</option>
           <option value="local">Local only</option>
           <option value="remote">Remote only</option>
         </Select>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Select value={source} onChange={(e) => setSelect("source", "all")(e.target.value)} className="w-52" aria-label="Source">
+        {/* Row break on larger screens: search row, then the rest. */}
+        <div className="hidden sm:block sm:h-0 sm:basis-full" aria-hidden />
+        <Select value={source} onChange={(e) => setSelect("source", "all")(e.target.value)} className="w-full sm:w-52" aria-label="Source">
           <option value="all">All sources</option>
           {sources.map((s) => (
             <option key={s.id} value={s.id} disabled={!s.ready && s.id !== source}>
@@ -144,7 +148,7 @@ export function DiscoverFilters({ sources }: { sources: SourceOption[] }) {
         <Select
           value={select("sort", "newest")}
           onChange={(e) => setSelect("sort", "newest")(e.target.value)}
-          className="w-44"
+          className="w-full sm:w-44"
           aria-label="Sort by"
           title="Most relevant ranks by your search words (Adzuna uses its own relevance)."
         >
@@ -159,7 +163,7 @@ export function DiscoverFilters({ sources }: { sources: SourceOption[] }) {
               else p.delete("days");
             })
           }
-          className="w-44"
+          className="w-full sm:w-44"
           aria-label="Date posted"
         >
           <option value="">Any date posted</option>
@@ -188,18 +192,19 @@ export function DiscoverFilters({ sources }: { sources: SourceOption[] }) {
         </Button>
         <Link
           href="/jobs/new"
-          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line bg-surface-raised px-3 text-sm font-medium text-ink hover:border-line-strong"
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-line-strong bg-surface-raised px-4 text-sm font-medium text-ink transition-colors hover:border-ink-faint/60 hover:bg-surface-sunken [@media(pointer:coarse)]:min-h-[44px]"
           title="Add a posting from any site, including Indeed and LinkedIn"
         >
-          <Plus className="h-3.5 w-3.5" aria-hidden /> Add job
+          <Plus className="h-4 w-4" aria-hidden /> Add job
         </Link>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
+      {/* One scrollable row on phones; wraps on larger screens. */}
+      <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
         <FilterChip active={internship} onClick={() => setParams((p) => (internship ? p.delete("internship") : p.set("internship", "1")))}>
           Internships / co-ops
         </FilterChip>
-        <span className="mx-1 h-4 w-px bg-line" aria-hidden />
+        <span className="mx-1 h-4 w-px shrink-0 bg-line-strong" aria-hidden />
         {JOB_CATEGORIES.map((c) => (
           <FilterChip key={c.value} active={activeCategories.has(c.value)} onClick={() => toggleCategory(c.value)}>
             {c.label}
@@ -222,8 +227,11 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "rounded-full border px-2.5 py-0.5 text-xs transition-colors",
-        active ? "border-accent bg-accent/10 text-ink" : "border-line text-ink-muted hover:border-line-strong hover:text-ink"
+        "inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-full border px-3 text-xs font-medium transition-colors",
+        "[@media(pointer:coarse)]:h-10",
+        active
+          ? "border-accent/40 bg-accent-soft text-accent"
+          : "border-line bg-surface-raised text-ink-muted hover:border-line-strong hover:text-ink"
       )}
     >
       {children}

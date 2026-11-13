@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Bookmark, BookmarkCheck, ExternalLink, MapPin, Sparkles } from "lucide-react";
+import { Bookmark, BookmarkCheck, ChevronRight, FileSearch, MapPin, Sparkles } from "lucide-react";
 import type { JobRow } from "@/lib/types";
 import { Badge, ScoreBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,30 +49,32 @@ export function JobCard({
   const [isSaved, setIsSaved] = useState(saved);
 
   return (
-    <article className="flex flex-col gap-2 rounded-lg border border-line bg-surface-raised p-3 transition-colors hover:border-line-strong">
-      <div className="flex items-start justify-between gap-2">
+    <article className="group flex flex-col gap-3 rounded-lg border border-line bg-surface-raised p-4 transition-[border-color,box-shadow] duration-150 hover:border-line-strong hover:shadow-[0_2px_8px_rgb(0_0_0/0.04)]">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-ink-muted">{job.company}</p>
           <Link
             href={`/jobs/${job.id}`}
-            className="line-clamp-2 text-sm font-semibold text-ink hover:text-accent"
+            className="mt-0.5 line-clamp-2 rounded-sm text-[15px] font-semibold leading-snug tracking-tight text-ink hover:text-accent"
           >
             {job.title}
           </Link>
         </div>
-        {job.description_text ? (
-          <ScoreBadge score={match.overall} />
-        ) : (
-          <Badge tone="warn" title="No description yet: open the job to fetch or paste it, then you'll get a match score">
-            No description
-          </Badge>
-        )}
+        <div className="shrink-0">
+          {job.description_text ? (
+            <ScoreBadge score={match.overall} />
+          ) : (
+            <Badge tone="outline" title="No description yet: open the job to fetch or paste it, then you'll get a match score">
+              No description
+            </Badge>
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 text-2xs text-ink-faint">
-        <span className="inline-flex items-center gap-1">
-          <MapPin className="h-3 w-3" aria-hidden />
-          {job.location || "Location n/a"}
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-ink-faint">
+        <span className="inline-flex min-w-0 items-center gap-1">
+          <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span className="truncate">{job.location || "Location n/a"}</span>
         </span>
         <span aria-hidden>·</span>
         <span>{workModeLabel[job.work_mode]}</span>
@@ -84,30 +86,33 @@ export function JobCard({
             <span title={job.posted_at}>{timeAgo(job.posted_at)}</span>
           </>
         ) : null}
-        <span aria-hidden>·</span>
-        <Badge tone="accent" title={`Found via ${sourceBadge(job.source)}`}>
+        <Badge tone="neutral" className="ml-0.5" title={`Found via ${sourceBadge(job.source)}`}>
           {sourceBadge(job.source)}
         </Badge>
       </div>
 
       {!job.description_text && job.snippet ? (
-        <p className="line-clamp-2 text-2xs leading-4 text-ink-muted">{job.snippet}</p>
+        <p className="line-clamp-2 text-xs leading-5 text-ink-muted">{job.snippet}</p>
       ) : null}
 
-      <div className="flex flex-wrap gap-1">
-        {match.matchedSkills.slice(0, 5).map((s) => (
-          <Badge key={s} tone="good" title="You can truthfully claim this skill">
-            {displaySkill(s)}
-          </Badge>
-        ))}
-        {match.missingSkills.slice(0, 3).map((s) => (
-          <Badge key={s} tone="bad" title="Not in your Career Vault">
-            {displaySkill(s)}
-          </Badge>
-        ))}
-      </div>
+      {match.matchedSkills.length || match.missingSkills.length ? (
+        <div className="flex flex-wrap gap-1">
+          {match.matchedSkills.slice(0, 5).map((s) => (
+            <Badge key={s} tone="good" title="You can truthfully claim this skill">
+              <span className="sr-only">Matched skill: </span>
+              {displaySkill(s)}
+            </Badge>
+          ))}
+          {match.missingSkills.slice(0, 3).map((s) => (
+            <Badge key={s} tone="outline" className="border-dashed" title="Not in your Career Vault">
+              <span className="sr-only">Missing skill: </span>
+              {displaySkill(s)}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
 
-      <div className="mt-auto flex items-center gap-1.5 pt-1">
+      <div className="mt-auto flex items-center gap-2 border-t border-line pt-3">
         <Button
           size="sm"
           variant={isSaved ? "outline" : "secondary"}
@@ -134,9 +139,10 @@ export function JobCard({
         {!job.description_text ? (
           <Link
             href={`/jobs/${job.id}`}
-            className="inline-flex h-7 items-center gap-1 rounded-md bg-accent px-2.5 text-xs font-medium text-white hover:opacity-90"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line-strong bg-surface-raised px-3 text-xs font-medium text-ink transition-colors hover:border-ink-faint/60 hover:bg-surface-sunken [@media(pointer:coarse)]:min-h-[44px]"
             title="Open the job to fetch or paste its description"
           >
+            <FileSearch className="h-3.5 w-3.5" aria-hidden />
             Add description
           </Link>
         ) : (
@@ -167,10 +173,10 @@ export function JobCard({
         )}
         <Link
           href={`/jobs/${job.id}`}
-          className="ml-auto inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-ink-muted hover:bg-surface-sunken hover:text-ink"
+          className="ml-auto inline-flex h-8 items-center gap-0.5 rounded-md pl-2 pr-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink [@media(pointer:coarse)]:min-h-[44px]"
         >
           View Job
-          <ExternalLink className="h-3 w-3" aria-hidden />
+          <ChevronRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
       </div>
     </article>

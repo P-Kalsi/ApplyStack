@@ -56,8 +56,8 @@ async function Results({ params }: { params: SearchParams }) {
     <>
       {emptyVault ? <VaultNudge /> : null}
       {problems.length ? (
-        <div className="flex items-start gap-2 rounded-md border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-ink">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+        <div role="status" className="flex items-start gap-2 rounded-lg border border-warn/30 bg-warn/10 px-4 py-3 text-xs leading-5 text-ink">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn" aria-hidden />
           <div>
             {problems.map((p) => (
               <p key={p.id}>
@@ -68,8 +68,8 @@ async function Results({ params }: { params: SearchParams }) {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-ink-muted">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p className="text-xs tabular-nums text-ink-muted">
           {showingText(page, perPage, rows.length, result.total)}
           {source === "all" && result.sources.some((s) => s.total)
             ? ` · ${result.sources
@@ -89,7 +89,7 @@ async function Results({ params }: { params: SearchParams }) {
           description="Try a bigger radius, Both instead of Local only, a different source, or clear the search."
         />
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {rows.map((job) => {
             const m = computeMatch(job, vault);
             return (
@@ -105,13 +105,13 @@ async function Results({ params }: { params: SearchParams }) {
       )}
 
       {lastPage > 1 ? (
-        <nav className="flex flex-wrap items-center justify-center gap-1 pt-2" aria-label="Pages">
+        <nav className="flex flex-wrap items-center justify-center gap-1.5 pt-4" aria-label="Pages">
           <PageLink href={hrefFor(params, page - 1)} disabled={page <= 1} label="Previous page">
-            <ChevronLeft className="h-3.5 w-3.5" aria-hidden /> Prev
+            <ChevronLeft className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Prev</span>
           </PageLink>
           {pageList(page, lastPage).map((n, i) =>
             n === "…" ? (
-              <span key={`gap-${i}`} className="px-1 text-xs text-ink-faint">
+              <span key={`gap-${i}`} className="px-1 text-xs text-ink-faint" aria-hidden>
                 …
               </span>
             ) : (
@@ -121,7 +121,7 @@ async function Results({ params }: { params: SearchParams }) {
             )
           )}
           <PageLink href={hrefFor(params, page + 1)} disabled={page >= lastPage} label="Next page">
-            Next <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+            <span className="hidden sm:inline">Next</span> <ChevronRight className="h-4 w-4" aria-hidden />
           </PageLink>
         </nav>
       ) : null}
@@ -145,8 +145,11 @@ function PageLink({
   label: string;
 }) {
   const cls = cn(
-    "inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-md border px-2.5 text-xs font-medium",
-    current ? "border-accent bg-accent text-white" : "border-line bg-surface-raised text-ink hover:border-line-strong",
+    "inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-md border px-3 text-sm font-medium tabular-nums transition-colors",
+    "[@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-11",
+    current
+      ? "border-accent bg-accent text-accent-ink"
+      : "border-line bg-surface-raised text-ink hover:border-line-strong hover:bg-surface-sunken",
     disabled && "pointer-events-none opacity-40"
   );
   if (disabled) {
@@ -166,10 +169,10 @@ function PageLink({
 function ResultsSkeleton() {
   return (
     <div className="space-y-3">
-      <Skeleton className="h-4 w-56" />
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <Skeleton className="h-4 w-56 max-w-full" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="space-y-2 rounded-lg border border-line bg-surface-raised p-3">
+          <div key={i} className="space-y-2 rounded-lg border border-line bg-surface-raised p-4">
             <Skeleton className="h-3 w-24" />
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-3 w-1/2" />
@@ -187,7 +190,8 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
   const supabase = await createClient();
   const statuses = await sourceStatuses({ supabase, userId: user.id, fetchImpl: fetch });
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      <h1 className="sr-only">Discover</h1>
       <Suspense fallback={<Skeleton className="h-20 w-full" />}>
         <DiscoverFilters sources={statuses.map(({ id, label, ready, message }) => ({ id, label, ready, message }))} />
       </Suspense>

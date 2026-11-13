@@ -14,15 +14,20 @@ export function VaultNudge() {
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-4 py-3">
-      <Database className="h-4 w-4 text-accent" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-ink">Your Career Vault is empty</p>
-        <p className="text-2xs text-ink-muted">
-          Match scores and tailoring use only verified vault facts. Load your profile
-          (editable) or build it in the Career Vault.
-        </p>
+    <div className="flex flex-col gap-3 rounded-lg border border-accent/25 bg-accent-soft px-4 py-3 sm:flex-row sm:items-center">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-raised text-accent ring-1 ring-accent/20">
+          <Database className="h-4 w-4" aria-hidden />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-ink">Your Career Vault is empty</p>
+          <p className="text-xs leading-5 text-ink-muted">
+            Match scores and tailoring use only verified vault facts. Load your profile
+            (editable) or build it in the Career Vault.
+          </p>
+        </div>
       </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-2 pl-11 sm:pl-0">
       <Button
         size="sm"
         variant="primary"
@@ -43,6 +48,7 @@ export function VaultNudge() {
       <Button size="sm" variant="ghost" onClick={() => router.push("/vault")}>
         Open Career Vault
       </Button>
+      </div>
     </div>
   );
 }

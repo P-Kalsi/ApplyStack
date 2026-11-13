@@ -29,10 +29,10 @@ export default async function SavedJobsPage() {
     .filter((j): j is JobRow => Boolean(j));
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-base font-semibold text-ink">Saved Jobs</h1>
-        <p className="text-xs text-ink-muted">
+        <h1 className="text-title text-ink">Saved Jobs</h1>
+        <p className="mt-1 text-sm text-ink-muted">
           {jobs.length} saved · saving a job also adds it to your Applications pipeline
         </p>
       </div>
@@ -48,7 +48,7 @@ export default async function SavedJobsPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {jobs.map((job) => {
             const m = computeMatch(job, vault);
             return (

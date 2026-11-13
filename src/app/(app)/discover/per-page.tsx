@@ -9,7 +9,7 @@ export function PerPageSelect({ value }: { value: number }) {
   const pathname = usePathname();
   const params = useSearchParams();
   return (
-    <label className="flex items-center gap-1.5 text-xs text-ink-muted">
+    <label className="flex items-center gap-2 text-xs text-ink-muted">
       Show
       <Select
         value={String(value)}
@@ -19,7 +19,7 @@ export function PerPageSelect({ value }: { value: number }) {
           next.delete("page"); // back to the first page
           router.push(`${pathname}?${next.toString()}`);
         }}
-        className="w-20"
+        className="w-[5.5rem]"
         aria-label="Jobs per page"
       >
         {PER_PAGE_OPTIONS.map((n) => (
