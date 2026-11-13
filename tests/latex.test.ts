@@ -7,7 +7,7 @@ import {
   parseResume,
   serializeResume,
 } from "../src/lib/resume/latex";
-import { SAMPLE_MASTER_RESUME } from "../src/lib/vault/starter";
+import { SAMPLE_MASTER_RESUME } from "./fixtures/sample-profile";
 
 test("findClosingBrace handles nesting and escapes", () => {
   const s = "{a {b} \\{c\\} d}";

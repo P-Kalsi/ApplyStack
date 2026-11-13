@@ -155,8 +155,11 @@ export interface MasterResumeRow {
   id: string;
   user_id: string;
   title: string;
-  format: "latex" | "plain";
+  format: "latex" | "plain" | "docx";
   content: string;
+  /** Original .docx (base64) for Word masters; null for LaTeX. */
+  template_base64?: string | null;
+  file_name?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -196,8 +199,11 @@ export interface ResumeVersionRow {
   name: string;
   company: string | null;
   role: string | null;
+  /** Untouched master content (LaTeX source or Word document.xml). */
   master_latex: string;
+  /** Tailored content with accepted changes applied (same format). */
   latex_content: string;
+  format: "latex" | "docx";
   match_score_before: number | null;
   match_score_after: number | null;
   keywords_added: string[];

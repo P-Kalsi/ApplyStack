@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { extractFactsFromLatex } from "../src/lib/resume/extract-facts";
-import { SAMPLE_MASTER_RESUME } from "../src/lib/vault/starter";
+import { SAMPLE_MASTER_RESUME } from "./fixtures/sample-profile";
 
 test("extracts clean plain-text facts from resume bullets", () => {
   const facts = extractFactsFromLatex(SAMPLE_MASTER_RESUME);

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { applyChangesToLatex, countApplied } from "../src/lib/resume/apply-changes";
 import { getBullets, parseResume } from "../src/lib/resume/latex";
-import { SAMPLE_MASTER_RESUME } from "../src/lib/vault/starter";
+import { SAMPLE_MASTER_RESUME } from "./fixtures/sample-profile";
 
 const bullets = getBullets(parseResume(SAMPLE_MASTER_RESUME));
 const webForm = bullets.find((b) => b.text.includes("custom web form"))!;

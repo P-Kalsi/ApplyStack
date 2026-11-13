@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import type { FactRow, ResumeChangeRow, ResumeVersionRow } from "@/lib/types";
-import { parseResume } from "@/lib/resume/latex";
+import { parseResumeDocument, normalizeFormat } from "@/lib/resume/document";
 import { Badge, ScoreBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -25,7 +25,6 @@ import { Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { cn, displaySkill } from "@/lib/utils";
 import { acceptAllSafe, resetReview, setChangeStatus, setVersionStatus } from "../../actions";
-import { downloadTex } from "../../version-card";
 
 export function ReviewClient({
   version,
@@ -43,7 +42,8 @@ export function ReviewClient({
   const factText = useMemo(() => new Map(facts.map((f) => [f.id, f.fact_text])), [facts]);
   const changeByBlock = useMemo(() => new Map(changes.map((c) => [c.block_id, c])), [changes]);
 
-  const parsed = useMemo(() => parseResume(version.master_latex), [version.master_latex]);
+  const format = normalizeFormat(version.format);
+  const parsed = useMemo(() => parseResumeDocument(version.master_latex, format), [version.master_latex, format]);
 
   const safeProposed = changes.filter((c) => c.status === "proposed" && c.is_safe).length;
   const accepted = changes.filter((c) => c.status === "accepted" || c.status === "edited").length;
@@ -92,13 +92,12 @@ export function ReviewClient({
           >
             <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Restore
           </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => downloadTex(version.name, version.latex_content)}
+          <a
+            href={`/api/versions/${version.id}/download`}
+            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 text-xs font-medium text-ink hover:border-line-strong"
           >
-            <Download className="h-3.5 w-3.5" aria-hidden /> .tex
-          </Button>
+            <Download className="h-3.5 w-3.5" aria-hidden /> {format === "docx" ? ".docx" : ".tex"}
+          </a>
           <Link
             href={`/tailor/print/${version.id}`}
             className="inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 text-xs font-medium text-ink hover:border-line-strong"
@@ -145,14 +144,14 @@ export function ReviewClient({
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Card>
           <CardHeader title="Original resume" description="Your master, untouched" />
-          <ResumePane parsedBlocks={parsed.blocks} changeByBlock={changeByBlock} side="original" />
+          <ResumePane parsedBlocks={parsed.blocks} changeByBlock={changeByBlock} side="original" format={format} />
         </Card>
         <Card>
           <CardHeader
             title="Tailored resume"
             description="Accepted and edited changes applied — structure preserved"
           />
-          <ResumePane parsedBlocks={parsed.blocks} changeByBlock={changeByBlock} side="tailored" />
+          <ResumePane parsedBlocks={parsed.blocks} changeByBlock={changeByBlock} side="tailored" format={format} />
         </Card>
       </div>
 
@@ -206,18 +205,41 @@ function ResumePane({
   parsedBlocks,
   changeByBlock,
   side,
+  format,
 }: {
-  parsedBlocks: ReturnType<typeof parseResume>["blocks"];
+  parsedBlocks: ReturnType<typeof parseResumeDocument>["blocks"];
   changeByBlock: Map<string, ResumeChangeRow>;
   side: "original" | "tailored";
+  format: "latex" | "docx";
 }) {
+  const docx = format === "docx";
   return (
-    <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words px-4 py-3 font-mono text-2xs leading-4 text-ink-muted">
+    <pre
+      className={cn(
+        "max-h-[420px] overflow-auto whitespace-pre-wrap break-words px-4 py-3 text-2xs leading-4 text-ink-muted",
+        docx ? "font-sans text-xs leading-5" : "font-mono"
+      )}
+    >
       {parsedBlocks.map((block) => {
-        if (block.kind === "text") return <span key={block.id}>{block.raw}</span>;
+        if (block.kind === "text") {
+          if (!docx) return <span key={block.id}>{block.raw}</span>;
+          if (!block.display) return null;
+          const heading = /^[A-Z][A-Z &/]+$/.test(block.display);
+          return (
+            <span key={block.id} className={cn("block", heading ? "mt-2 font-semibold text-ink" : "text-ink-muted")}>
+              {block.display}
+            </span>
+          );
+        }
         const change = changeByBlock.get(block.id);
         const applied = change && (change.status === "accepted" || change.status === "edited");
         const removed = change?.change_type === "remove";
+        const render = (text: string) =>
+          docx
+            ? block.role === "skills"
+              ? `${block.entry}: ${text}`
+              : `• ${text}`
+            : block.pre + text + block.post;
 
         if (side === "original") {
           return (
@@ -225,12 +247,13 @@ function ResumePane({
               key={block.id}
               className={cn(
                 "text-ink",
+                docx && "block pl-3",
                 change && applied && "diff-del rounded-sm px-0.5",
                 change && !applied && change.status === "proposed" && "rounded-sm bg-warn/10 px-0.5"
               )}
               title={change ? `Change ${change.status}` : undefined}
             >
-              {block.pre + block.text + block.post}
+              {render(block.text)}
             </span>
           );
         }
@@ -243,12 +266,13 @@ function ResumePane({
             key={block.id}
             className={cn(
               "text-ink",
+              docx && "block pl-3",
               applied && "diff-add rounded-sm px-0.5",
               change && !applied && change.status === "proposed" && "rounded-sm bg-warn/10 px-0.5"
             )}
             title={change ? `Change ${change.status}` : undefined}
           >
-            {block.pre + text + block.post}
+            {render(text)}
           </span>
         );
       })}

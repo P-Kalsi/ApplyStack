@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { resumeCoverage, runJobAnalysis, runMatchReport, runTailorPipeline } from "../src/lib/ai/engine";
 import { reorderTrailingList } from "../src/lib/resume/reorder-list";
 import { applyChangesToLatex } from "../src/lib/resume/apply-changes";
-import { SAMPLE_MASTER_RESUME } from "../src/lib/vault/starter";
+import { SAMPLE_MASTER_RESUME } from "./fixtures/sample-profile";
 import { JobAnalysisSchema, MatchReportSchema } from "../src/lib/ai/schemas";
 import { makeJob, makeVault } from "./helpers";
 

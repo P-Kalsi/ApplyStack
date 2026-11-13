@@ -13,19 +13,11 @@ import { useToast } from "@/components/ui/toast";
 import { formatDate } from "@/lib/utils";
 import { deleteVersion, duplicateVersion, renameVersion } from "./actions";
 
-export function downloadTex(name: string, content: string) {
-  const blob = new Blob([content], { type: "application/x-tex" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${name.replace(/[^a-z0-9-_ ]/gi, "").trim().replace(/\s+/g, "_") || "resume"}.tex`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-export function VersionCard({ version }: { version: ResumeVersionRow }) {
+export function VersionCard({
+  version,
+}: {
+  version: Omit<ResumeVersionRow, "master_latex" | "latex_content">;
+}) {
   const { toast } = useToast();
   const router = useRouter();
   const [renaming, setRenaming] = useState(false);
@@ -80,6 +72,9 @@ export function VersionCard({ version }: { version: ResumeVersionRow }) {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
+          <Badge tone="outline" className="uppercase">
+            {version.format === "docx" ? "docx" : "tex"}
+          </Badge>
           <Badge tone={version.status === "final" ? "good" : "neutral"}>{version.status}</Badge>
           <ScoreBadge score={version.match_score_after} label="Match score after tailoring" />
         </div>
@@ -114,15 +109,14 @@ export function VersionCard({ version }: { version: ResumeVersionRow }) {
         >
           <Copy className="h-3.5 w-3.5" aria-hidden />
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          aria-label="Download .tex"
-          title="Download LaTeX source"
-          onClick={() => downloadTex(version.name, version.latex_content)}
+        <a
+          href={`/api/versions/${version.id}/download`}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-muted hover:bg-surface-sunken hover:text-ink"
+          aria-label={version.format === "docx" ? "Download .docx" : "Download .tex"}
+          title={version.format === "docx" ? "Download Word resume" : "Download LaTeX source"}
         >
           <Download className="h-3.5 w-3.5" aria-hidden />
-        </Button>
+        </a>
         <Link
           href={`/tailor/print/${version.id}`}
           className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-muted hover:bg-surface-sunken hover:text-ink"

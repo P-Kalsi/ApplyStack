@@ -6,8 +6,9 @@ import type { JobRow, VaultSnapshot } from "../types";
 import { canonicalizeSkillList, extractSkills } from "../jobs/skills";
 import { computeMatch, vaultSkillSet } from "../matching/score";
 import { rankExperiences, rankProjects, selectRelevantFacts } from "../matching/relevance";
-import { getBullets, parseResume, type BulletBlock } from "../resume/latex";
-import { applyChangesToLatex } from "../resume/apply-changes";
+import type { BulletBlock } from "../resume/latex";
+import { applyChangesToDocument } from "../resume/apply-changes";
+import { documentBullets, documentPlainText, type ResumeFormat } from "../resume/document";
 import { guardTailorChanges, sanitizeMatchReport, type GuardResult } from "./guard";
 import { mockAnalyzeJob, mockMatchReport, mockTailor } from "./mock";
 import { aiEnabled, callStructured } from "./run";
@@ -76,12 +77,16 @@ export interface TailorPipelineOutput {
 }
 
 /** Keyword coverage of a resume document against a job's requested skills. */
-export function resumeCoverage(latex: string, job: Pick<JobRow, "skills" | "title" | "description_text">): number {
+export function resumeCoverage(
+  content: string,
+  job: Pick<JobRow, "skills" | "title" | "description_text">,
+  format: ResumeFormat = "latex"
+): number {
   const wanted = job.skills.length
     ? canonicalizeSkillList(job.skills)
     : extractSkills(`${job.title}\n${job.description_text || ""}`);
   if (wanted.length === 0) return 50;
-  const have = new Set(extractSkills(latex));
+  const have = new Set(extractSkills(documentPlainText(content, format)));
   const hit = wanted.filter((w) => have.has(w)).length;
   return Math.round((hit / wanted.length) * 100);
 }
@@ -90,18 +95,18 @@ export async function runTailorPipeline(
   job: JobRow,
   analysis: JobAnalysis,
   vault: VaultSnapshot,
-  masterLatex: string
+  masterContent: string,
+  format: ResumeFormat = "latex"
 ): Promise<TailorPipelineOutput> {
   // STEP 2-3 (deterministic): relevant facts + ranked content.
   const facts = selectRelevantFacts(job, vault, 24);
   const skills = Array.from(vaultSkillSet(vault)).sort();
-  const parsed = parseResume(masterLatex);
-  const bullets = getBullets(parsed);
+  const bullets = documentBullets(masterContent, format);
 
   // STEP 4-6: propose content changes (model or mock).
   const { data, engine } = await withAi(
     async () => {
-      return callStructured(TailorResultSchema, tailorPrompt(job, analysis, facts, bullets, skills));
+      return callStructured(TailorResultSchema, tailorPrompt(job, analysis, facts, bullets, skills, format));
     },
     () => mockTailor(job, vault, bullets)
   );
@@ -122,22 +127,23 @@ export async function runTailorPipeline(
   };
 
   // STEP 7 preview: what the resume looks like with every guarded change applied.
-  const previewLatex = applyChangesToLatex(
-    masterLatex,
+  const preview = applyChangesToDocument(
+    masterContent,
     guarded.accepted.map((c) => ({
       block_id: c.block_id,
       change_type: c.action === "remove" ? ("remove" as const) : ("rewrite" as const),
       status: "accepted" as const,
       current_text: c.tailored_text,
-    }))
+    })),
+    format
   );
 
   return {
     result,
     guarded,
     bullets,
-    scoreBefore: resumeCoverage(masterLatex, job),
-    scoreAfter: resumeCoverage(previewLatex, job),
+    scoreBefore: resumeCoverage(masterContent, job, format),
+    scoreAfter: resumeCoverage(preview, job, format),
     engine,
   };
 }

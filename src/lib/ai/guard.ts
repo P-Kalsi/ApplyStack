@@ -6,7 +6,7 @@
 import type { FactRow } from "../types";
 import { canonicalSkill, extractSkills } from "../jobs/skills";
 import type { BulletBlock } from "../resume/latex";
-import { latexToPlain } from "../resume/latex";
+import { bulletPlain, latexToPlain } from "../resume/latex";
 import type { MatchReport, TailorChange } from "./schemas";
 
 /**
@@ -84,6 +84,7 @@ export interface GuardResult {
  *    every approved supporting fact (inventing metrics)
  * Soft flags (kept, but is_safe=false so "Accept all safe" skips them):
  *  - rewrite cites no supporting facts
+ *  - rewrite is much longer than the original (page-length risk)
  *  - cited fact ids that do not resolve to approved facts
  */
 export function guardTailorChanges(
@@ -103,7 +104,10 @@ export function guardTailorChanges(
       rejected.push({ change, reason: `Unknown resume block "${change.block_id}".` });
       continue;
     }
-    const originalPlain = latexToPlain(bullet.text);
+    const originalPlain = bulletPlain(bullet);
+    const tailoredPlain = bullet.plain
+      ? change.tailored_text.replace(/\s+/g, " ").trim()
+      : latexToPlain(change.tailored_text);
 
     if (change.action === "remove") {
       accepted.push({
@@ -122,7 +126,7 @@ export function guardTailorChanges(
     const supportBlob = citedFacts.map((f) => `${f.fact_text} ${f.keywords.join(" ")}`).join("\n");
 
     // Rule: no invented technologies.
-    const newSkills = extractSkills(latexToPlain(change.tailored_text));
+    const newSkills = extractSkills(tailoredPlain);
     const allowedSkills = new Set([
       ...extractSkills(originalPlain),
       ...extractSkills(supportBlob),
@@ -139,7 +143,7 @@ export function guardTailorChanges(
 
     // Rule: no invented numbers/metrics.
     const allowedNumbers = new Set([...numbersIn(originalPlain), ...numbersIn(supportBlob)]);
-    const newNumbers = Array.from(numbersIn(latexToPlain(change.tailored_text))).filter(
+    const newNumbers = Array.from(numbersIn(tailoredPlain)).filter(
       (n) => !allowedNumbers.has(n)
     );
     if (newNumbers.length > 0) {
@@ -154,7 +158,10 @@ export function guardTailorChanges(
     // Pure reorders of existing content are safe by construction (nothing new
     // is claimed); rewrites must cite resolvable supporting facts to be safe.
     const isReorder = change.action === "skills_reorder" || change.action === "coursework";
-    const is_safe = isReorder || (citedFacts.length > 0 && unresolvedFactIds.length === 0);
+    // Much longer bullets risk pushing a one-page resume onto a second page.
+    const tooLong = tailoredPlain.length > originalPlain.length * 1.35 + 15;
+    const is_safe =
+      !tooLong && (isReorder || (citedFacts.length > 0 && unresolvedFactIds.length === 0));
 
     accepted.push({
       ...change,

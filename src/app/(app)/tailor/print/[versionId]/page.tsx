@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient, requireUser } from "@/lib/supabase/server";
-import { getBullets, latexToPlain, parseResume } from "@/lib/resume/latex";
+import { documentOutline, normalizeFormat } from "@/lib/resume/document";
 import type { ResumeVersionRow } from "@/lib/types";
 import { PrintButton } from "./print-button";
 
@@ -32,15 +32,8 @@ export default async function PrintPage({
   if (!data) notFound();
   const version = data as ResumeVersionRow;
 
-  const parsed = parseResume(version.latex_content);
-  const bullets = getBullets(parsed);
-  const sections = new Map<string, string[]>();
-  for (const b of bullets) {
-    const key = b.section || "Content";
-    const list = sections.get(key) ?? [];
-    list.push(latexToPlain(b.text));
-    sections.set(key, list);
-  }
+  const format = normalizeFormat(version.format);
+  const outline = documentOutline(version.latex_content, format);
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
@@ -54,30 +47,42 @@ export default async function PrintPage({
         <PrintButton />
       </div>
       <div className="no-print rounded-md border border-warn/30 bg-warn/10 px-3 py-2 text-2xs text-ink">
-        This is a content preview for quick printing. For the exact LaTeX layout, download the
-        .tex file and compile it (e.g. Overleaf).
+        {format === "docx"
+          ? "Content preview only. For the exact layout, download the .docx and use Word's Save as PDF."
+          : "Content preview only. For the exact LaTeX layout, download the .tex file and compile it (e.g. Overleaf)."}
       </div>
 
       <article className="rounded-lg border border-line bg-white p-8 text-black shadow-sm print:border-0 print:p-0 print:shadow-none">
-        <header className="border-b border-neutral-300 pb-2 text-center">
-          <h1 className="text-xl font-bold tracking-tight">{version.name}</h1>
-          <p className="mt-0.5 text-xs text-neutral-600">
-            {version.company ? `Tailored for ${version.company}` : "Tailored resume"}
-            {version.role ? ` · ${version.role}` : ""}
-          </p>
-        </header>
-        {Array.from(sections.entries()).map(([section, items]) => (
-          <section key={section} className="mt-4">
-            <h2 className="border-b border-neutral-300 pb-0.5 text-sm font-semibold uppercase tracking-wide">
-              {section}
-            </h2>
-            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-[13px] leading-5">
-              {items.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        {format === "latex" ? (
+          <header className="border-b border-neutral-300 pb-2 text-center">
+            <h1 className="text-xl font-bold tracking-tight">{version.name}</h1>
+            <p className="mt-0.5 text-xs text-neutral-600">
+              {version.company ? `Tailored for ${version.company}` : "Tailored resume"}
+              {version.role ? ` · ${version.role}` : ""}
+            </p>
+          </header>
+        ) : null}
+        <div className="mt-2 space-y-1 text-[13px] leading-5">
+          {outline.map((line, i) =>
+            line.kind === "heading" ? (
+              <h2
+                key={i}
+                className="mt-4 border-b border-neutral-300 pb-0.5 text-sm font-semibold uppercase tracking-wide"
+              >
+                {line.text}
+              </h2>
+            ) : line.kind === "bullet" ? (
+              <p key={i} className="flex gap-2 pl-2">
+                <span aria-hidden>•</span>
+                <span>{line.text}</span>
+              </p>
+            ) : (
+              <p key={i} className="font-medium">
+                {line.text}
+              </p>
+            )
+          )}
+        </div>
       </article>
     </div>
   );

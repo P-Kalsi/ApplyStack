@@ -19,8 +19,8 @@ export function VaultNudge() {
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-ink">Your Career Vault is empty</p>
         <p className="text-2xs text-ink-muted">
-          Match scores and tailoring use only verified vault facts. Load the starter profile
-          (editable) or build yours in the Career Vault.
+          Match scores and tailoring use only verified vault facts. Load your profile
+          (editable) or build it in the Career Vault.
         </p>
       </div>
       <Button
@@ -38,7 +38,7 @@ export function VaultNudge() {
           }
         }}
       >
-        Load starter profile
+        Load my profile
       </Button>
       <Button size="sm" variant="ghost" onClick={() => router.push("/vault")}>
         Open Career Vault

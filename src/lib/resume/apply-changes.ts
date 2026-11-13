@@ -1,9 +1,11 @@
-// Apply a reviewed set of tailoring changes to the master LaTeX.
+// Apply a reviewed set of tailoring changes to the master resume.
 // Only accepted/edited changes are applied; proposed and rejected changes
-// leave the original text in place. Pure and unit-tested.
+// leave the original text in place. Works for LaTeX and Word masters.
+// Pure and unit-tested.
 
 import type { ResumeChangeStatus, ResumeChangeType } from "../types";
-import { parseResume, serializeResume, type BlockOverride } from "./latex";
+import type { BlockOverride } from "./latex";
+import { parseResumeDocument, serializeResumeDocument, type ResumeFormat } from "./document";
 
 export interface ChangeInput {
   block_id: string;
@@ -17,8 +19,12 @@ export function isApplied(status: ResumeChangeStatus): boolean {
   return status === "accepted" || status === "edited";
 }
 
-export function applyChangesToLatex(masterLatex: string, changes: ChangeInput[]): string {
-  const parsed = parseResume(masterLatex);
+export function applyChangesToDocument(
+  master: string,
+  changes: ChangeInput[],
+  format: ResumeFormat
+): string {
+  const parsed = parseResumeDocument(master, format);
   const overrides = new Map<string, BlockOverride>();
   for (const change of changes) {
     if (!isApplied(change.status)) continue;
@@ -28,7 +34,12 @@ export function applyChangesToLatex(masterLatex: string, changes: ChangeInput[])
       overrides.set(change.block_id, { text: change.current_text });
     }
   }
-  return serializeResume(parsed, overrides);
+  return serializeResumeDocument(parsed, format, overrides);
+}
+
+/** LaTeX convenience wrapper (kept for existing callers and tests). */
+export function applyChangesToLatex(masterLatex: string, changes: ChangeInput[]): string {
+  return applyChangesToDocument(masterLatex, changes, "latex");
 }
 
 /** Count how many changes would actually modify the document. */

@@ -6,7 +6,7 @@ import {
   STARTER_PROJECTS,
   STARTER_SKILLS,
   STARTER_GENERAL_FACTS,
-} from "../src/lib/vault/starter";
+} from "./fixtures/sample-profile";
 
 const USER = "00000000-0000-0000-0000-000000000001";
 let idSeq = 0;

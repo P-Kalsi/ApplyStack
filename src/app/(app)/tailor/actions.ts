@@ -6,7 +6,8 @@ import { getJob } from "@/lib/db/jobs";
 import { loadVaultSnapshot, vaultIsEmpty } from "@/lib/db/vault";
 import { runJobAnalysis, runMatchReport, runTailorPipeline, resumeCoverage } from "@/lib/ai/engine";
 import { configuredModel } from "@/lib/ai/run";
-import { applyChangesToLatex } from "@/lib/resume/apply-changes";
+import { applyChangesToDocument } from "@/lib/resume/apply-changes";
+import { normalizeFormat } from "@/lib/resume/document";
 import type { JobAnalysis } from "@/lib/ai/schemas";
 import type { ResumeChangeRow, ResumeChangeStatus } from "@/lib/types";
 
@@ -46,13 +47,13 @@ export async function startTailoring(jobId: string): Promise<TailorStartResult> 
     if (vaultIsEmpty(vault)) {
       return {
         ok: false,
-        message: "Your Career Vault is empty. Load the starter profile or add your real records first.",
+        message: "Your Career Vault is empty. Load your profile from the Career Vault first.",
       };
     }
 
     const { data: master, error: masterErr } = await supabase
       .from("master_resumes")
-      .select("id, content")
+      .select("id, content, format")
       .eq("user_id", user.id)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
@@ -92,7 +93,8 @@ export async function startTailoring(jobId: string): Promise<TailorStartResult> 
     }
 
     // STEPS 2-7: tailor with guardrails.
-    const out = await runTailorPipeline(job, analysis, vault, master.content);
+    const format = normalizeFormat(master.format);
+    const out = await runTailorPipeline(job, analysis, vault, master.content, format);
 
     const { data: version, error: vErr } = await supabase
       .from("resume_versions")
@@ -103,6 +105,7 @@ export async function startTailoring(jobId: string): Promise<TailorStartResult> 
         name: `${job.company} — ${job.title}`,
         company: job.company,
         role: job.title,
+        format,
         master_latex: master.content,
         latex_content: master.content, // nothing accepted yet
         match_score_before: out.scoreBefore,
@@ -177,7 +180,7 @@ async function rematerialize(versionId: string, userId: string): Promise<void> {
   const [{ data: version, error: vErr }, { data: changes, error: cErr }] = await Promise.all([
     supabase
       .from("resume_versions")
-      .select("id, master_latex, job_id")
+      .select("id, master_latex, job_id, format")
       .eq("id", versionId)
       .eq("user_id", userId)
       .single(),
@@ -191,20 +194,22 @@ async function rematerialize(versionId: string, userId: string): Promise<void> {
   if (cErr) throw new Error(cErr.message);
 
   const rows = (changes || []) as ResumeChangeRow[];
-  const latex = applyChangesToLatex(
+  const format = normalizeFormat(version.format);
+  const latex = applyChangesToDocument(
     version.master_latex,
     rows.map((c) => ({
       block_id: c.block_id,
       change_type: c.change_type,
       status: c.status,
       current_text: c.current_text,
-    }))
+    })),
+    format
   );
 
   let after: number | null = null;
   if (version.job_id) {
     const job = await getJob(supabase, version.job_id);
-    if (job) after = resumeCoverage(latex, job);
+    if (job) after = resumeCoverage(latex, job, format);
   }
 
   const { error } = await supabase

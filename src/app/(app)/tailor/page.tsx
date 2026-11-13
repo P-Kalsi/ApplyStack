@@ -15,7 +15,9 @@ export default async function TailorPage() {
   const [{ data: versions, error }, { data: master }] = await Promise.all([
     supabase
       .from("resume_versions")
-      .select("*")
+      .select(
+        "id, user_id, master_resume_id, job_id, name, company, role, format, match_score_before, match_score_after, keywords_added, skills_emphasized, still_missing, status, created_at, updated_at"
+      )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
     supabase
@@ -28,7 +30,7 @@ export default async function TailorPage() {
   ]);
   if (error) throw new Error(error.message);
 
-  const rows = (versions || []) as ResumeVersionRow[];
+  const rows = (versions || []) as Omit<ResumeVersionRow, "master_latex" | "latex_content">[];
 
   return (
     <div className="space-y-3">

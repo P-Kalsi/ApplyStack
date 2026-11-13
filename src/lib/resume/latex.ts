@@ -13,6 +13,8 @@ export interface TextBlock {
   kind: "text";
   id: string;
   raw: string;
+  /** Human-readable rendering of `raw` (set by the Word parser). */
+  display?: string;
 }
 
 export interface BulletBlock {
@@ -26,6 +28,19 @@ export interface BulletBlock {
   post: string;
   /** Section heading this bullet lives under, if known. */
   section: string | null;
+  /** Entry heading (job/project line) this bullet belongs to, if known. */
+  entry?: string | null;
+  /** True when `text` is already plain text (Word resumes), not LaTeX. */
+  plain?: boolean;
+  /** "skills" for comma-list lines like "Technical Skills: A, B, C". */
+  role?: "bullet" | "skills";
+  /** Original source markup of the whole bullet (Word paragraph XML). */
+  raw?: string;
+}
+
+/** Plain-text view of a bullet regardless of source format. */
+export function bulletPlain(b: Pick<BulletBlock, "text" | "plain">): string {
+  return b.plain ? b.text.replace(/\s+/g, " ").trim() : latexToPlain(b.text);
 }
 
 export type ResumeBlock = TextBlock | BulletBlock;

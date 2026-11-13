@@ -45,10 +45,11 @@ export function VaultOverview({
       {isEmpty ? (
         <Card className="flex flex-wrap items-center gap-3 border-accent/30 bg-accent-soft p-4">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-ink">Start with the sample profile</p>
+            <p className="text-sm font-medium text-ink">Load your profile</p>
             <p className="text-xs text-ink-muted">
-              Loads editable starter records (UBC CS, SaveMyGrade, ProtectPibble, SiteSee,
-              InsightUBC, home lab, startup experience) plus a sample LaTeX master resume.
+              Loads your Career Vault from your master profile and resumes: 6 roles, 8 projects
+              (incl. Relume and SaveMyGrade), skills, and 50+ facts. A few facts with conflicting
+              details arrive as pending for you to approve or reject. Everything is editable.
             </p>
           </div>
           <Button
@@ -66,7 +67,7 @@ export function VaultOverview({
               }
             }}
           >
-            Load starter profile
+            Load my profile
           </Button>
         </Card>
       ) : null}

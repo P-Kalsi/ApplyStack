@@ -15,7 +15,6 @@ import {
   STARTER_GENERAL_FACTS,
   STARTER_PROJECTS,
   STARTER_SKILLS,
-  SAMPLE_MASTER_RESUME,
 } from "../vault/starter";
 import { extractSkills } from "../jobs/skills";
 
@@ -53,9 +52,10 @@ export function vaultIsEmpty(vault: VaultSnapshot): boolean {
 }
 
 /**
- * Seed the starter profile (editable example content) for a new user:
- * education, one experience, five projects, skills, the seed fact bank,
- * and a sample LaTeX master resume when none exists yet.
+ * Seed the starter profile for a new user: education, experiences, projects,
+ * skills, and the fact bank (see vault/starter.ts). Facts flagged pending in
+ * the starter stay pending until approved. The master resume is uploaded
+ * separately (Career Vault → Master Resume).
  */
 export async function seedStarterVault(supabase: SupabaseClient, userId: string): Promise<void> {
   const { data: edu, error: eduErr } = await supabase
@@ -81,7 +81,7 @@ export async function seedStarterVault(supabase: SupabaseClient, userId: string)
       category: f.category,
       keywords: extractSkills(f.text),
       source: "seed",
-      status: "approved",
+      status: f.status ?? "approved",
     }));
     const { error: factErr } = await supabase.from("career_facts").insert(factRows);
     if (factErr) throw new Error(factErr.message);
@@ -102,7 +102,7 @@ export async function seedStarterVault(supabase: SupabaseClient, userId: string)
       category: f.category,
       keywords: extractSkills(f.text),
       source: "seed",
-      status: "approved",
+      status: f.status ?? "approved",
     }));
     const { error: factErr } = await supabase.from("career_facts").insert(factRows);
     if (factErr) throw new Error(factErr.message);
@@ -125,23 +125,8 @@ export async function seedStarterVault(supabase: SupabaseClient, userId: string)
       category: f.category,
       keywords: extractSkills(f.text),
       source: "seed",
-      status: "approved",
+      status: f.status ?? "approved",
     }))
   );
   if (generalErr) throw new Error(generalErr.message);
-
-  const { count } = await supabase
-    .from("master_resumes")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
-  if (!count) {
-    const { error: resumeErr } = await supabase.from("master_resumes").insert({
-      user_id: userId,
-      title: "Master resume (sample)",
-      format: "latex",
-      content: SAMPLE_MASTER_RESUME,
-      is_active: true,
-    });
-    if (resumeErr) throw new Error(resumeErr.message);
-  }
 }

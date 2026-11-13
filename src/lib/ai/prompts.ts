@@ -6,7 +6,7 @@ import type { FactRow, JobRow } from "../types";
 import type { Ranked } from "../matching/relevance";
 import type { ExperienceRow, ProjectRow } from "../types";
 import type { BulletBlock } from "../resume/latex";
-import { latexToPlain } from "../resume/latex";
+import type { ResumeFormat } from "../resume/document";
 import type { JobAnalysis } from "./schemas";
 
 export interface BuiltPrompt {
@@ -114,11 +114,20 @@ export function tailorPrompt(
   analysis: JobAnalysis,
   facts: Ranked<FactRow>[],
   bullets: BulletBlock[],
-  vaultSkills: string[]
+  vaultSkills: string[],
+  format: ResumeFormat = "latex"
 ): BuiltPrompt {
   const bulletList = bullets
-    .map((b) => `- id=${b.id} [${b.section || "?"}] ${latexToPlain(b.text)}`)
+    .map((b) => {
+      const where = [b.section, b.entry].filter(Boolean).join(" / ") || "?";
+      const kind = b.role === "skills" ? " (skills list: reorder only, never add items)" : "";
+      return `- id=${b.id} [${where}]${kind} ${b.text}`;
+    })
     .join("\n");
+  const formatRule =
+    format === "docx"
+      ? "5. Bullets live in a one-page Word resume: write plain text only (no LaTeX, markdown, or bullet characters) and keep each rewrite about the same length as the original so the page does not overflow.\n"
+      : "5. Keep LaTeX formatting commands in tailored text when the original bullet had them, and keep each rewrite about the same length as the original.\n";
   return {
     system:
       "You tailor an existing resume to a job by rewriting, removing, or reordering EXISTING bullets. " +
@@ -127,7 +136,7 @@ export function tailorPrompt(
       "2. Never claim professional use of a technology based on vague similarity.\n" +
       "3. Preserve truthful metrics exactly as written.\n" +
       "4. Do not add keywords purely for ATS manipulation; a keyword may appear only when a cited fact supports it.\n" +
-      "5. Keep LaTeX formatting commands in tailored text when the original bullet had them.\n" +
+      formatRule +
       "Style: concise, technical, impact-focused bullets; no first-person pronouns; avoid buzzwords " +
       "like 'leveraged', 'spearheaded', 'utilized'; prefer Context -> Action -> Result. " +
       JSON_ONLY,

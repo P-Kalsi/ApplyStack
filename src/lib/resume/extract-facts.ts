@@ -5,7 +5,8 @@
 
 import type { FactCategory } from "../types";
 import { extractSkills } from "../jobs/skills";
-import { getBullets, latexToPlain, parseResume } from "./latex";
+import { bulletPlain } from "./latex";
+import { documentBullets, type ResumeFormat } from "./document";
 
 export interface ExtractedFact {
   fact_text: string;
@@ -24,12 +25,12 @@ function categorize(text: string, section: string | null): FactCategory {
   return "general";
 }
 
-export function extractFactsFromLatex(latex: string): ExtractedFact[] {
-  const parsed = parseResume(latex);
+export function extractFactsFromDocument(content: string, format: ResumeFormat): ExtractedFact[] {
   const seen = new Set<string>();
   const out: ExtractedFact[] = [];
-  for (const bullet of getBullets(parsed)) {
-    const plain = latexToPlain(bullet.text);
+  for (const bullet of documentBullets(content, format)) {
+    if (bullet.role === "skills") continue; // skills lines belong in Technical Skills, not facts
+    const plain = bulletPlain(bullet);
     if (plain.length < 12) continue; // headings/fragments are not facts
     const key = plain.toLowerCase();
     if (seen.has(key)) continue;
@@ -42,4 +43,8 @@ export function extractFactsFromLatex(latex: string): ExtractedFact[] {
     });
   }
   return out;
+}
+
+export function extractFactsFromLatex(latex: string): ExtractedFact[] {
+  return extractFactsFromDocument(latex, "latex");
 }

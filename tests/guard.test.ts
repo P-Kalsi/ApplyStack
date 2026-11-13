@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { guardTailorChanges, numbersIn, sanitizeMatchReport } from "../src/lib/ai/guard";
 import { getBullets, parseResume } from "../src/lib/resume/latex";
-import { SAMPLE_MASTER_RESUME } from "../src/lib/vault/starter";
+import { SAMPLE_MASTER_RESUME } from "./fixtures/sample-profile";
 import type { MatchReport } from "../src/lib/ai/schemas";
 
 const bullets = getBullets(parseResume(SAMPLE_MASTER_RESUME));

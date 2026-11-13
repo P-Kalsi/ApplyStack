@@ -123,7 +123,7 @@ export function FactsEditor({
         <EmptyState
           icon={<ListChecks className="h-6 w-6" />}
           title="No facts here"
-          description="Add facts manually, load the starter profile, or extract facts from your master resume."
+          description="Add facts manually, load your profile, or extract facts from your master resume."
         />
       ) : (
         <Card className="divide-y divide-line">

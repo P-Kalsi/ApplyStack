@@ -40,7 +40,7 @@ export default async function VaultPage({
     loadVaultSnapshot(supabase, user.id),
     supabase
       .from("master_resumes")
-      .select("*")
+      .select("id, user_id, title, format, content, file_name, is_active, created_at, updated_at")
       .eq("user_id", user.id)
       .eq("is_active", true)
       .order("created_at", { ascending: false })

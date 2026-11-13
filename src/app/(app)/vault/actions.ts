@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient, requireUser } from "@/lib/supabase/server";
 import { loadVaultSnapshot, seedStarterVault, vaultIsEmpty } from "@/lib/db/vault";
 import { extractSkills } from "@/lib/jobs/skills";
-import { extractFactsFromLatex } from "@/lib/resume/extract-facts";
+import { extractFactsFromDocument } from "@/lib/resume/extract-facts";
+import { normalizeFormat, documentBullets } from "@/lib/resume/document";
+import { readDocumentXml } from "@/lib/docx/zip";
 
 export interface ActionResult {
   ok: boolean;
@@ -46,9 +48,9 @@ export async function seedVault(): Promise<ActionResult> {
     }
     await seedStarterVault(supabase, user.id);
     revalidateVault();
-    return { ok: true, message: "Starter profile loaded. Every record is editable." };
+    return { ok: true, message: "Profile loaded. Review pending facts in the Fact Bank; every record is editable." };
   } catch (err) {
-    return fail(err, "Failed to seed the starter profile.");
+    return fail(err, "Failed to load the profile.");
   }
 }
 
@@ -336,6 +338,58 @@ export async function saveMasterResume(fd: FormData): Promise<ActionResult> {
   }
 }
 
+const MAX_DOCX_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Upload a Word (.docx) resume as the master. The file is stored untouched
+ * (it is the template every tailored resume is rebuilt from); only
+ * word/document.xml is parsed and edited.
+ */
+export async function uploadMasterDocx(fd: FormData): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const supabase = await createClient();
+    const file = fd.get("file");
+    if (!(file instanceof File)) return { ok: false, message: "Choose a .docx file to upload." };
+    if (!/\.docx$/i.test(file.name)) return { ok: false, message: "Only .docx files are supported." };
+    if (file.size > MAX_DOCX_BYTES) return { ok: false, message: "That file is over 8 MB." };
+
+    const buf = Buffer.from(await file.arrayBuffer());
+    let xml: string;
+    try {
+      xml = readDocumentXml(buf);
+    } catch {
+      return { ok: false, message: "Could not read that file as a Word document." };
+    }
+    const bullets = documentBullets(xml, "docx");
+    if (bullets.length === 0) {
+      return { ok: false, message: "No bullet points found. Bullets must use Word's bulleted list formatting." };
+    }
+
+    const title = str(fd, "title") || file.name.replace(/\.docx$/i, "");
+    await supabase.from("master_resumes").update({ is_active: false }).eq("user_id", user.id);
+    const { error } = await supabase.from("master_resumes").insert({
+      user_id: user.id,
+      title,
+      format: "docx",
+      content: xml,
+      template_base64: buf.toString("base64"),
+      file_name: file.name,
+      is_active: true,
+    });
+    if (error) throw new Error(error.message);
+    revalidatePath("/vault");
+    revalidatePath("/tailor");
+    const skills = bullets.filter((b) => b.role === "skills").length;
+    return {
+      ok: true,
+      message: `Master resume set to ${file.name}: ${bullets.length - skills} bullets and ${skills} skills lines are tailorable; everything else stays exactly as is.`,
+    };
+  } catch (err) {
+    return fail(err, "Upload failed.");
+  }
+}
+
 /**
  * Deterministically extract candidate facts from the active master resume.
  * New facts arrive as "pending" so the user explicitly approves or rejects
@@ -347,7 +401,7 @@ export async function extractResumeFacts(): Promise<ActionResult> {
     const supabase = await createClient();
     const { data: master, error } = await supabase
       .from("master_resumes")
-      .select("id, content")
+      .select("id, content, format")
       .eq("user_id", user.id)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
@@ -356,9 +410,9 @@ export async function extractResumeFacts(): Promise<ActionResult> {
     if (error) throw new Error(error.message);
     if (!master) return { ok: false, message: "No master resume saved yet." };
 
-    const extracted = extractFactsFromLatex(master.content);
+    const extracted = extractFactsFromDocument(master.content, normalizeFormat(master.format));
     if (extracted.length === 0) {
-      return { ok: false, message: "No bullet facts found — is the resume LaTeX with \\resumeItem or \\item bullets?" };
+      return { ok: false, message: "No bullet facts found in the master resume." };
     }
 
     const { data: existing, error: exErr } = await supabase

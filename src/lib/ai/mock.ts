@@ -9,8 +9,8 @@ import { computeMatch, vaultSkillSet } from "../matching/score";
 import { rankExperiences, rankProjects } from "../matching/relevance";
 import { canonicalSkill, extractSkills } from "../jobs/skills";
 import type { BulletBlock } from "../resume/latex";
-import { latexToPlain } from "../resume/latex";
-import { reorderTrailingList } from "../resume/reorder-list";
+import { bulletPlain } from "../resume/latex";
+import { reorderList, reorderTrailingList } from "../resume/reorder-list";
 import type { JobAnalysis, MatchReport, TailorResult } from "./schemas";
 
 const LANGS = new Set(["typescript", "javascript", "python", "java", "go", "c++", "c#", "c", "rust", "ruby", "kotlin", "swift", "php", "scala", "r", "sql", "bash", "html", "css"]);
@@ -98,7 +98,7 @@ export function mockMatchReport(job: JobRow, vault: VaultSnapshot): MatchReport 
 
 /** Link a bullet to vault facts that state the same thing (by text or skills). */
 function supportingFactIds(bullet: BulletBlock, vault: VaultSnapshot): string[] {
-  const plain = latexToPlain(bullet.text).toLowerCase().replace(/\.$/, "");
+  const plain = bulletPlain(bullet).toLowerCase().replace(/\.$/, "");
   const bulletSkills = new Set(extractSkills(plain));
   const out: string[] = [];
   for (const f of vault.facts) {
@@ -123,14 +123,22 @@ export function mockTailor(job: JobRow, vault: VaultSnapshot, bullets: BulletBlo
 
   const projectBullets = bullets.filter((b) => /project/i.test(b.section || ""));
   const relevantProjectBullets = projectBullets.filter(
-    (b) => extractSkills(latexToPlain(b.text)).some((s) => prioritized.has(s))
+    (b) => extractSkills(bulletPlain(b)).some((s) => prioritized.has(s))
   );
 
+  // Bullets per entry (job/project), so removals never empty an entry.
+  const entryKey = (b: BulletBlock) => `${b.section ?? ""}::${b.entry ?? ""}`;
+  const remainingPerEntry = new Map<string, number>();
+  for (const b of bullets) remainingPerEntry.set(entryKey(b), (remainingPerEntry.get(entryKey(b)) ?? 0) + 1);
+
   for (const bullet of bullets) {
-    const isSkillsLine = /skill/i.test(bullet.section || "");
-    const reordered = reorderTrailingList(bullet.text, prioritized);
+    const isSkillsLine = bullet.role === "skills" || /skill/i.test(bullet.section || "");
+    const reordered =
+      bullet.role === "skills"
+        ? reorderList(bullet.text, prioritized)
+        : reorderTrailingList(bullet.text, prioritized);
     if (reordered) {
-      const moved = extractSkills(latexToPlain(bullet.text)).filter((s) => prioritized.has(s));
+      const moved = extractSkills(bulletPlain(bullet)).filter((s) => prioritized.has(s));
       moved.forEach((s) => emphasized.add(s));
       changes.push({
         block_id: bullet.id,
@@ -144,11 +152,14 @@ export function mockTailor(job: JobRow, vault: VaultSnapshot, bullets: BulletBlo
     }
     // Deprioritize clearly irrelevant project bullets when stronger ones exist.
     const isProject = /project/i.test(bullet.section || "");
+    const key = entryKey(bullet);
     if (
       isProject &&
       relevantProjectBullets.length >= 2 &&
-      !extractSkills(latexToPlain(bullet.text)).some((s) => prioritized.has(s))
+      (remainingPerEntry.get(key) ?? 0) > 1 &&
+      !extractSkills(bulletPlain(bullet)).some((s) => prioritized.has(s))
     ) {
+      remainingPerEntry.set(key, (remainingPerEntry.get(key) ?? 0) - 1);
       changes.push({
         block_id: bullet.id,
         action: "remove",
