@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const llm = await checkLlmBackend(); // cached; refreshed on startup and on settings changes
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface print:min-h-0 print:bg-white">
       <a
         href="#main"
         className="no-print sr-only z-50 rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-ink focus:not-sr-only focus:fixed focus:left-4 focus:top-3"
@@ -34,7 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       ) : null}
       <AppNav email={user.email || "account"} signOutAction={signOut} />
-      <main id="main" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-6 focus:outline-none sm:px-6">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-6 focus:outline-none sm:px-6 print:max-w-none print:p-0">
         {children}
       </main>
     </div>

@@ -37,22 +37,22 @@ export default async function PrintPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <div className="no-print flex items-center justify-between">
+      <div className="no-print flex flex-wrap items-center justify-between gap-2">
         <Link
           href={`/tailor/review/${version.id}`}
-          className="inline-flex items-center gap-1 text-xs text-ink-muted hover:text-ink"
+          className="-ml-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs font-medium text-ink-muted transition-colors hover:text-ink"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Back to review
         </Link>
         <PrintButton />
       </div>
-      <div className="no-print rounded-md border border-warn/30 bg-warn/10 px-3 py-2 text-2xs text-ink">
+      <div className="no-print rounded-md border border-warn/30 bg-warn/10 px-3 py-2 text-xs leading-5 text-ink">
         {format === "docx"
           ? "Content preview only. For the exact layout, download the .docx and use Word's Save as PDF."
           : "Content preview only. For the exact LaTeX layout, download the .tex file and compile it (e.g. Overleaf)."}
       </div>
 
-      <article className="rounded-lg border border-line bg-white p-8 text-black shadow-sm print:border-0 print:p-0 print:shadow-none">
+      <article className="rounded-lg border border-line bg-white p-6 text-black shadow-overlay [color-scheme:light] sm:p-10 print:rounded-none print:border-0 print:p-0 print:shadow-none">
         {format === "latex" ? (
           <header className="border-b border-neutral-300 pb-2 text-center">
             <h1 className="text-xl font-bold tracking-tight">{version.name}</h1>

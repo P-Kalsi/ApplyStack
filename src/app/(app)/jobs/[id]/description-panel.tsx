@@ -64,13 +64,17 @@ export function DescriptionPanel({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-medium text-accent hover:underline"
+            className="inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-accent underline-offset-2 hover:underline [@media(pointer:coarse)]:min-h-[44px]"
           >
-            Open posting ↗
+            Open posting ↗<span className="sr-only"> (opens in a new tab)</span>
           </a>
         ) : null}
         {!pasting ? (
-          <button type="button" className="text-xs text-ink-muted hover:text-ink" onClick={() => setPasting(true)}>
+          <button
+            type="button"
+            className="inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink [@media(pointer:coarse)]:min-h-[44px]"
+            onClick={() => setPasting(true)}
+          >
             Paste it instead
           </button>
         ) : null}

@@ -49,17 +49,17 @@ export function ReviewClient({
   const accepted = changes.filter((c) => c.status === "accepted" || c.status === "edited").length;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-base font-semibold text-ink">{version.name}</h1>
-          <p className="text-xs text-ink-muted">
+          <h1 className="text-title text-ink">{version.name}</h1>
+          <p className="mt-1 text-sm tabular-nums text-ink-muted">
             {changes.length} proposed change(s) · {accepted} applied ·{" "}
             {version.status === "final" ? "finalized" : "draft"}
           </p>
         </div>
-        <div className="no-print flex flex-wrap items-center gap-1.5">
+        <div className="no-print flex flex-wrap items-center gap-2">
           <Button
             size="sm"
             variant="primary"
@@ -94,13 +94,13 @@ export function ReviewClient({
           </Button>
           <a
             href={`/api/versions/${version.id}/download`}
-            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 text-xs font-medium text-ink hover:border-line-strong"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line-strong bg-surface-raised px-3 text-xs font-medium text-ink transition-colors hover:border-ink-faint/60 hover:bg-surface-sunken [@media(pointer:coarse)]:min-h-[44px]"
           >
             <Download className="h-3.5 w-3.5" aria-hidden /> {format === "docx" ? ".docx" : ".tex"}
           </a>
           <Link
             href={`/tailor/print/${version.id}`}
-            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 text-xs font-medium text-ink hover:border-line-strong"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line-strong bg-surface-raised px-3 text-xs font-medium text-ink transition-colors hover:border-ink-faint/60 hover:bg-surface-sunken [@media(pointer:coarse)]:min-h-[44px]"
           >
             <Printer className="h-3.5 w-3.5" aria-hidden /> Print / PDF
           </Link>
@@ -123,7 +123,7 @@ export function ReviewClient({
 
       {/* Scores & keyword summary */}
       <Card>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
           <div className="flex items-center gap-2 text-xs text-ink">
             <span className="text-ink-muted">Match score</span>
             <ScoreBadge score={version.match_score_before} label="Before tailoring" />
@@ -141,7 +141,7 @@ export function ReviewClient({
       </Card>
 
       {/* Side-by-side documents */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader title="Original resume" description="Your master, untouched" />
           <ResumePane parsedBlocks={parsed.blocks} changeByBlock={changeByBlock} side="original" format={format} />
@@ -162,7 +162,7 @@ export function ReviewClient({
           description="Every change cites the Career Vault facts that support it. Unsafe changes lack fact support and are excluded from bulk-accept."
         />
         {changes.length === 0 ? (
-          <p className="px-4 py-6 text-center text-xs text-ink-muted">
+          <p className="px-4 py-8 text-center text-sm text-ink-muted">
             The engine proposed no changes — the master resume already fits this job well.
           </p>
         ) : (
@@ -188,8 +188,8 @@ function SummaryChips({
 }) {
   if (!items.length) return null;
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-2xs text-ink-muted">{label}:</span>
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-xs text-ink-muted">{label}:</span>
       <span className="flex flex-wrap gap-1">
         {items.slice(0, 8).map((k) => (
           <Badge key={k} tone={tone}>
@@ -216,7 +216,7 @@ function ResumePane({
   return (
     <pre
       className={cn(
-        "max-h-[420px] overflow-auto whitespace-pre-wrap break-words px-4 py-3 text-2xs leading-4 text-ink-muted",
+        "max-h-[480px] overflow-auto whitespace-pre-wrap break-words bg-surface-sunken/40 px-4 py-3 text-xs leading-5 text-ink-muted",
         docx ? "font-sans text-xs leading-5" : "font-mono"
       )}
     >
@@ -315,9 +315,9 @@ function ChangeCard({
   };
 
   return (
-    <div className="space-y-2 px-4 py-3">
+    <div className="space-y-3 px-4 py-4">
       <div className="flex flex-wrap items-center gap-1.5">
-        <Badge tone={statusTone[change.status]}>{change.status}</Badge>
+        <Badge tone={statusTone[change.status]} className="capitalize">{change.status}</Badge>
         <Badge tone="outline" className="capitalize">
           {change.change_type.replace("_", " ")}
         </Badge>
@@ -343,12 +343,12 @@ function ChangeCard({
       </div>
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        <div className="rounded-md border border-line bg-surface-sunken/60 p-2">
-          <p className="mb-1 text-2xs font-medium uppercase tracking-wide text-ink-faint">Original</p>
+        <div className="rounded-md border border-line bg-surface-sunken/60 p-3">
+          <p className="mb-1 text-xs font-medium text-ink-faint">Original</p>
           <p className="font-mono text-xs leading-5 text-ink">{change.original_text}</p>
         </div>
-        <div className="rounded-md border border-good/30 bg-good/5 p-2">
-          <p className="mb-1 text-2xs font-medium uppercase tracking-wide text-ink-faint">
+        <div className="rounded-md border border-good/30 bg-good/5 p-3">
+          <p className="mb-1 text-xs font-medium text-ink-faint">
             {change.change_type === "remove" ? "Tailored (removed)" : "Tailored"}
           </p>
           {editing ? (
@@ -388,20 +388,20 @@ function ChangeCard({
       </p>
 
       {change.fact_ids.length ? (
-        <div className="text-2xs text-ink-faint">
-          <span className="font-medium">Supporting facts:</span>{" "}
+        <div className="text-xs leading-6 text-ink-faint">
+          <span className="font-medium text-ink-muted">Supporting facts:</span>{" "}
           {change.fact_ids
             .map((id) => factText.get(id))
             .filter(Boolean)
             .map((t, i) => (
-              <span key={i} className="mr-2 inline-block rounded bg-surface-sunken px-1.5 py-0.5">
+              <span key={i} className="mr-1.5 inline-block rounded-md border border-line bg-surface-sunken px-2 py-0.5 leading-5 text-ink-muted">
                 {t}
               </span>
             ))}
         </div>
       ) : null}
 
-      <div className="no-print flex flex-wrap gap-1.5">
+      <div className="no-print flex flex-wrap gap-2">
         {change.status !== "accepted" && change.status !== "edited" ? (
           <Button size="sm" variant="secondary" loading={busy === "accepted"} onClick={() => act("accepted")}>
             <Check className="h-3.5 w-3.5 text-good" aria-hidden /> Accept

@@ -33,16 +33,16 @@ export default async function TailorPage() {
   const rows = (versions || []) as Omit<ResumeVersionRow, "master_latex" | "latex_content">[];
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-end justify-between gap-2">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-base font-semibold text-ink">Resume Tailor</h1>
-          <p className="text-xs text-ink-muted">
+          <h1 className="text-title text-ink">Resume Tailor</h1>
+          <p className="mt-1 text-sm text-ink-muted">
             Every tailored resume is a reviewable version with full change provenance.
             {master ? ` Master: ${master.title}.` : " No master resume yet — add one in Career Vault."}
           </p>
         </div>
-        <Link href="/discover" className="text-xs font-medium text-accent hover:underline">
+        <Link href="/discover" className="text-sm font-medium text-accent underline-offset-2 hover:underline">
           Find a job to tailor for →
         </Link>
       </div>
@@ -59,7 +59,7 @@ export default async function TailorPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {rows.map((v) => (
             <VersionCard key={v.id} version={v} />
           ))}

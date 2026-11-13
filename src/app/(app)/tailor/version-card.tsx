@@ -39,15 +39,15 @@ export function VersionCard({
   };
 
   return (
-    <article className="flex flex-col gap-2 rounded-lg border border-line bg-surface-raised p-3">
-      <div className="flex items-start justify-between gap-2">
+    <article className="flex flex-col gap-3 rounded-lg border border-line bg-surface-raised p-4 transition-colors hover:border-line-strong">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           {renaming ? (
             <div className="flex gap-1.5">
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="h-7 text-xs"
+                className="h-8 text-xs"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void saveName();
@@ -62,12 +62,12 @@ export function VersionCard({
           ) : (
             <Link
               href={`/tailor/review/${version.id}`}
-              className="line-clamp-1 text-sm font-semibold text-ink hover:text-accent"
+              className="line-clamp-2 rounded-sm text-[15px] font-semibold leading-snug tracking-tight text-ink hover:text-accent"
             >
               {version.name}
             </Link>
           )}
-          <p className="mt-0.5 text-2xs text-ink-faint">
+          <p className="mt-1 text-xs text-ink-faint">
             {version.company || "No company"} · generated {formatDate(version.created_at)}
           </p>
         </div>
@@ -81,24 +81,25 @@ export function VersionCard({
       </div>
 
       {version.skills_emphasized.length ? (
-        <p className="text-2xs text-ink-muted">
-          Emphasized: {version.skills_emphasized.slice(0, 6).join(", ")}
+        <p className="text-xs text-ink-muted">
+          <span className="font-medium text-ink">Emphasized:</span> {version.skills_emphasized.slice(0, 6).join(", ")}
         </p>
       ) : null}
 
-      <div className="mt-auto flex flex-wrap items-center gap-1 pt-1">
+      <div className="mt-auto flex flex-wrap items-center gap-1 border-t border-line pt-3">
         <Link
           href={`/tailor/review/${version.id}`}
-          className="inline-flex h-7 items-center rounded-md bg-accent px-2.5 text-xs font-medium text-accent-ink hover:bg-accent-hover"
+          className="mr-1 inline-flex h-8 w-full items-center justify-center rounded-md bg-accent px-3 sm:w-auto text-xs font-medium text-accent-ink transition-colors hover:bg-accent-hover [@media(pointer:coarse)]:min-h-[44px]"
         >
           Review changes
         </Link>
-        <Button size="sm" variant="ghost" onClick={() => setRenaming(true)} aria-label="Rename">
+        <Button size="sm" variant="ghost" className="w-8 px-0 [@media(pointer:coarse)]:w-11" onClick={() => setRenaming(true)} aria-label="Rename" title="Rename">
           <Pencil className="h-3.5 w-3.5" aria-hidden />
         </Button>
         <Button
           size="sm"
           variant="ghost"
+          className="w-8 px-0 [@media(pointer:coarse)]:w-11"
           aria-label="Duplicate"
           title="Duplicate this version"
           onClick={async () => {
@@ -111,7 +112,7 @@ export function VersionCard({
         </Button>
         <a
           href={`/api/versions/${version.id}/download`}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-muted hover:bg-surface-sunken hover:text-ink"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
           aria-label={version.format === "docx" ? "Download .docx" : "Download .tex"}
           title={version.format === "docx" ? "Download Word resume" : "Download LaTeX source"}
         >
@@ -119,7 +120,7 @@ export function VersionCard({
         </a>
         <Link
           href={`/tailor/print/${version.id}`}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-muted hover:bg-surface-sunken hover:text-ink"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
           aria-label="Print view"
           title="Print / save as PDF"
         >
@@ -134,7 +135,7 @@ export function VersionCard({
             router.refresh();
           }}
         >
-          <Button size="sm" variant="ghost" aria-label="Delete">
+          <Button size="sm" variant="ghost" className="ml-auto w-8 px-0 hover:bg-bad/10 [@media(pointer:coarse)]:w-11" aria-label="Delete" title="Delete">
             <Trash2 className="h-3.5 w-3.5 text-bad" aria-hidden />
           </Button>
         </Confirm>

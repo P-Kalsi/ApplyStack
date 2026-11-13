@@ -54,21 +54,21 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const hasDescription = paragraphs.length > 0;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       <Link
         href="/discover"
-        className="no-print inline-flex items-center gap-1 text-xs text-ink-muted hover:text-ink"
+        className="no-print -ml-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs font-medium text-ink-muted transition-colors hover:text-ink"
       >
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Back to Discover
       </Link>
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-medium text-ink-muted">{job.company}</p>
-          <h1 className="text-xl font-semibold tracking-tight text-ink">{job.title}</h1>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-ink-faint">
+          <h1 className="mt-0.5 text-2xl font-semibold leading-tight tracking-tight text-ink">{job.title}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-ink-faint">
             <span className="inline-flex items-center gap-1">
-              <MapPin className="h-3 w-3" aria-hidden /> {job.location || "Location n/a"}
+              <MapPin className="h-3.5 w-3.5" aria-hidden /> {job.location || "Location n/a"}
             </span>
             <span aria-hidden>·</span>
             <span>{workModeLabel[job.work_mode]}</span>
@@ -80,11 +80,10 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                 <span>posted {timeAgo(job.posted_at)}</span>
               </>
             ) : null}
-            <span aria-hidden>·</span>
-            <Badge tone="accent">{sourceBadge(job.source)}</Badge>
+            <Badge tone="neutral" className="ml-0.5">{sourceBadge(job.source)}</Badge>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="no-print flex flex-wrap items-center gap-2">
           {hasDescription ? (
             <>
               <ScoreBadge score={match.overall} label="Your deterministic match score" />
@@ -96,20 +95,21 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               href={job.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line bg-surface-raised px-3.5 text-sm font-medium text-ink hover:border-line-strong"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-strong bg-surface-raised px-4 text-sm font-medium text-ink transition-colors hover:border-ink-faint/60 hover:bg-surface-sunken [@media(pointer:coarse)]:min-h-[44px]"
             >
               Apply <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+              <span className="sr-only">(opens in a new tab)</span>
             </a>
           ) : null}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Left: description */}
         <Card className="lg:col-span-2">
           <CardHeader title="Full description" />
           {hasDescription ? (
-            <div className="space-y-3 px-4 py-3 text-sm leading-6 text-ink">
+            <div className="max-w-prose space-y-3 px-4 py-4 text-sm leading-6 text-ink">
               {paragraphs.map((p, i) => (
                 <p key={i} className="whitespace-pre-line">
                   {p}
@@ -120,7 +120,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             <>
               {job.snippet ? (
                 <div className="border-b border-line px-4 py-3 text-sm text-ink">
-                  <p className="mb-1 text-2xs font-medium uppercase tracking-wide text-ink-faint">
+                  <p className="mb-1 text-xs font-medium text-ink-faint">
                     Preview from {sourceBadge(job.source)}
                   </p>
                   <p className="whitespace-pre-line text-ink-muted">{job.snippet}</p>
@@ -140,7 +140,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             />
           </Card>
         ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Card>
             <CardHeader
               title="Your match"
@@ -148,7 +148,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             />
             <div className="space-y-3 px-4 py-3">
               <div>
-                <h3 className="mb-1 text-xs font-medium text-ink-muted">Matched qualifications</h3>
+                <h3 className="mb-1.5 text-xs font-medium text-ink-muted">Matched qualifications</h3>
                 <div className="flex flex-wrap gap-1">
                   {match.matchedSkills.length ? (
                     match.matchedSkills.map((s) => (
@@ -162,11 +162,11 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                 </div>
               </div>
               <div>
-                <h3 className="mb-1 text-xs font-medium text-ink-muted">Missing qualifications</h3>
+                <h3 className="mb-1.5 text-xs font-medium text-ink-muted">Missing qualifications</h3>
                 <div className="flex flex-wrap gap-1">
                   {match.missingSkills.length ? (
                     match.missingSkills.map((s) => (
-                      <Badge key={s} tone="bad">
+                      <Badge key={s} tone="outline" className="border-dashed">
                         {displaySkill(s)}
                       </Badge>
                     ))

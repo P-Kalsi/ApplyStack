@@ -82,7 +82,7 @@ export function AppNav({ email, signOutAction }: { email: string; signOutAction:
 
         {/* Mobile: the current page name stands in for the hidden links */}
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink-muted lg:hidden">
-          {current ? <span className="border-l border-line pl-3">{current.label}</span> : null}
+          {current ? <span className="hidden border-l border-line pl-3 sm:inline">{current.label}</span> : null}
         </span>
 
         <div className="flex shrink-0 items-center gap-1">

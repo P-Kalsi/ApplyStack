@@ -49,10 +49,10 @@ export default async function ReviewPage({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <Link
         href="/tailor"
-        className="no-print inline-flex items-center gap-1 text-xs text-ink-muted hover:text-ink"
+        className="no-print -ml-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs font-medium text-ink-muted transition-colors hover:text-ink"
       >
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> All resume versions
       </Link>
