@@ -67,9 +67,11 @@ Requires Node 22+ (the AI SDK needs it).
 ### 2. Create a Supabase project
 
 1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
-2. In the SQL editor, paste and run `supabase/setup_all.sql` once. It is migrations 0001–0005
-   in order (schema, row-level security, Word resumes, AI backends, table grants), so it works
-   whether or not "Automatically expose new tables" is on.
+2. In the SQL editor, paste and run `supabase/setup_all.sql` once. It is migrations 0001–0006
+   in order (schema, row-level security, Word resumes, AI backends, table grants, internship
+   feed), so it works whether or not "Automatically expose new tables" is on.
+   Already set up with an older `setup_all.sql`? Run only the migrations you haven't run yet
+   (e.g. `0006_simplify_feed.sql`).
    `supabase/seed.sql` adds 14 sample internships from fictional companies; skip it for real use.
 3. (Optional, for local dev convenience) Authentication → Providers → Email → disable
    "Confirm email" so signup works without an SMTP setup.
@@ -112,6 +114,36 @@ Sign up, then:
    default. Tailoring can rewrite, reorder and trim its bullets and skills lines, but cannot add
    projects that aren't in it, so choose one with your strongest projects.
 3. **Applications → Import CSV** to bring in an existing spreadsheet tracker.
+
+## Internship feed, job descriptions and Discord alerts
+
+**Feed.** Discover pulls Simplify's public internship list (the data behind
+github.com/SimplifyJobs, one JSON file on GitHub), filtered in **Settings → Internship feed &
+alerts** by location (Canada / United States / Remote), term and kind of role. It refreshes when
+you open Discover (at most every 30 minutes) or click **Refresh sources**. Listings that leave the
+list are marked closed and drop off Discover; your applications keep them.
+
+**Descriptions.** Feed listings arrive without a description, and tailoring needs one:
+
+- Greenhouse, Lever and Ashby links: fetched automatically from each company's public job API,
+  up to 40 per refresh, and on demand with **Get description** on the job page.
+- Workday links: **Get description** reads that one posting from the careers site's own job data,
+  only when you click it.
+- Anything else: **Paste it** on the job page.
+- **Discover → Add job** adds a posting from any site; paste the link and click **Fill from link**
+  for the four sites above, or type the details and paste the description.
+
+Jobs without a description show "No description" instead of a match score, and analysis and
+tailoring wait until one is added.
+
+**Discord alerts.** In your Discord server: channel settings → Integrations → Webhooks → New
+Webhook → Copy Webhook URL. Put it in `.env.local` as `DISCORD_WEBHOOK_URL=…` and restart. While
+ApplyStack runs, it checks the list on your interval (15 min – 4 h) and posts new listings that
+match your filters, with the apply link and a link back to ApplyStack. The first check only
+records what's already open (no flood), changing your filters starts a fresh baseline, and an
+unchanged list is skipped via ETag. Seen listings are kept in `.applystack-alerts.json`
+(git-ignored). Turn alerts on for one computer only, or every alert arrives twice. The webhook URL
+works like a password: anyone with it can post in that channel.
 
 ## AI backend
 

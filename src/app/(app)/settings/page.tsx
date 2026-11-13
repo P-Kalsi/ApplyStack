@@ -6,8 +6,14 @@ import type { JobSourceRow } from "@/lib/types";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ProfileForm, SourcesManager } from "./settings-client";
 import { LlmBackendCard } from "./llm-backend";
+import { FeedAlertsCard } from "./feed-alerts";
+import { FEED_CATEGORIES, FEED_REGIONS, TERM_NOT_LISTED, upcomingTerms } from "@/lib/jobs/adapters/simplify";
+import { discordWebhookUrl, isValidDiscordWebhook, loadFeedSettings } from "@/lib/jobs/feed-settings";
+import { loadAlertState } from "@/lib/alerts/discord";
 
 export const metadata: Metadata = { title: "Settings" };
+// Reads the local config and alert state on every visit.
+export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const user = await requireUser();
@@ -19,6 +25,9 @@ export default async function SettingsPage() {
   ]);
 
   const llmSettings = loadLlmSettings();
+  const feed = loadFeedSettings();
+  const hook = discordWebhookUrl();
+  const alertState = loadAlertState();
   const llmStatus = await checkLlmBackend();
 
   const envSources = sourcesFromEnv({
@@ -30,7 +39,7 @@ export default async function SettingsPage() {
     <div className="max-w-3xl space-y-3">
       <div>
         <h1 className="text-base font-semibold text-ink">Settings</h1>
-        <p className="text-xs text-ink-muted">Profile, job sources, and AI backend.</p>
+        <p className="text-xs text-ink-muted">Profile, internship feed and alerts, company boards, and AI backend.</p>
       </div>
 
       <Card>
@@ -50,7 +59,27 @@ export default async function SettingsPage() {
 
       <Card>
         <CardHeader
-          title="Job sources"
+          title="Internship feed & alerts"
+          description="Where Discover's internships come from, and Discord alerts for new ones. Saved on this computer."
+        />
+        <FeedAlertsCard
+          regions={FEED_REGIONS}
+          categories={FEED_CATEGORIES}
+          termOptions={upcomingTerms()}
+          notListed={TERM_NOT_LISTED}
+          settings={feed}
+          webhook={!hook ? "missing" : isValidDiscordWebhook(hook) ? "ok" : "invalid"}
+          alertState={{
+            initialized_at: alertState.initialized_at,
+            last_run_at: alertState.last_run_at,
+            last_result: alertState.last_result,
+          }}
+        />
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Company boards (optional)"
           description="Public Greenhouse Job Board and Lever Postings APIs. Add the board token from boards.greenhouse.io/<token> or the site name from jobs.lever.co/<site>."
         />
         <SourcesManager sources={(sources || []) as JobSourceRow[]} envSources={envSources} />

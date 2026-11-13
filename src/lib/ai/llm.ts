@@ -21,10 +21,13 @@
 // Server-only: uses child_process and fs. Never import from client components.
 
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
+import { configPath, readConfig, writeConfig } from "../config";
+
+export { configPath };
 
 // ---------------------------------------------------------------------------
 // Settings
@@ -83,10 +86,6 @@ export interface LlmSettings {
   source: "config" | "env" | "default";
 }
 
-export function configPath(): string {
-  return process.env.APPLYSTACK_CONFIG || join(process.cwd(), "applystack.config.json");
-}
-
 /** Fill blanks with provider defaults; pure, unit-tested. */
 export function resolveSettings(raw: Partial<LlmSettingsInput>, envProvider?: string): LlmSettings {
   const parsed = SettingsFileSchema.safeParse(raw);
@@ -109,15 +108,7 @@ export function resolveSettings(raw: Partial<LlmSettingsInput>, envProvider?: st
 
 /** Current settings: config file, then APPLYSTACK_LLM_PROVIDER env override. */
 export function loadLlmSettings(): LlmSettings {
-  let raw: Partial<LlmSettingsInput> = {};
-  const path = configPath();
-  if (existsSync(path)) {
-    try {
-      raw = JSON.parse(readFileSync(path, "utf8"));
-    } catch {
-      console.warn(`[llm] ${path} is not valid JSON; using defaults.`);
-    }
-  }
+  const raw = readConfig() as Partial<LlmSettingsInput>;
   return resolveSettings(raw, process.env.APPLYSTACK_LLM_PROVIDER);
 }
 
@@ -130,7 +121,9 @@ export function saveLlmSettings(input: unknown): LlmSettings {
     ...(parsed.model_smart?.trim() ? { model_smart: parsed.model_smart.trim() } : {}),
     ...(parsed.timeout_seconds ? { timeout_seconds: parsed.timeout_seconds } : {}),
   };
-  writeFileSync(configPath(), JSON.stringify(clean, null, 2) + "\n");
+  // Keep the other sections of the file (internship feed, alerts) as they are.
+  const existing = readConfig();
+  writeConfig({ ...clean, ...(existing.feed !== undefined ? { feed: existing.feed } : {}) });
   statusCache.clear();
   return loadLlmSettings();
 }

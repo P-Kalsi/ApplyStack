@@ -46,6 +46,12 @@ export async function startTailoring(jobId: string): Promise<TailorStartResult> 
       loadVaultSnapshot(supabase, user.id),
     ]);
     if (!job) return { ok: false, message: "Job not found." };
+    if (!job.description_text?.trim()) {
+      return {
+        ok: false,
+        message: "This job has no description yet. Use Get description or paste it on the job page first.",
+      };
+    }
     if (vaultIsEmpty(vault)) {
       return {
         ok: false,

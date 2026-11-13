@@ -9,6 +9,10 @@ import {
   type LlmSettings,
   type LlmStatus,
 } from "@/lib/ai/llm";
+import { z } from "zod";
+import { FEED_CATEGORIES, FEED_REGIONS } from "@/lib/jobs/adapters/simplify";
+import { loadFeedSettings, saveFeedSettings } from "@/lib/jobs/feed-settings";
+import { resetAlertBaseline, runAlertCheck, sendTestAlert } from "@/lib/alerts/discord";
 
 export interface ActionResult {
   ok: boolean;
@@ -159,5 +163,69 @@ export async function recheckLlmBackend(): Promise<LlmBackendState> {
     return { ok: status.ok, message: status.message, settings: loadLlmSettings(), status };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "Check failed." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Internship feed (Simplify) + Discord alerts
+// ---------------------------------------------------------------------------
+
+const FeedFormSchema = z.object({
+  enabled: z.boolean(),
+  regions: z.array(z.enum(FEED_REGIONS)),
+  terms: z.array(z.string().max(40)).max(20),
+  categories: z.array(z.enum(FEED_CATEGORIES)),
+  alerts_enabled: z.boolean(),
+  interval_minutes: z.number().int().min(10).max(1440),
+});
+
+export async function saveFeedAndAlerts(input: z.input<typeof FeedFormSchema>): Promise<ActionResult> {
+  try {
+    await requireUser();
+    const d = FeedFormSchema.parse(input);
+    const before = loadFeedSettings();
+    const filterChanged =
+      JSON.stringify([before.simplify.regions, before.simplify.terms, before.simplify.categories]) !==
+      JSON.stringify([d.regions, d.terms, d.categories]);
+    saveFeedSettings({
+      simplify: { enabled: d.enabled, regions: d.regions, terms: d.terms, categories: d.categories },
+      alerts: { enabled: d.alerts_enabled, interval_minutes: d.interval_minutes },
+      // Pull again on the next Discover visit so the board matches the new filters.
+      ...(filterChanged ? { last_ingest_at: null } : {}),
+    });
+    // New filters: start alerts from a fresh baseline instead of flooding the
+    // channel with every listing that newly matches.
+    if (filterChanged) resetAlertBaseline();
+    revalidatePath("/settings");
+    revalidatePath("/discover");
+    return {
+      ok: true,
+      message: filterChanged
+        ? "Saved. Discover will pull the feed with your new filters next time you open it."
+        : "Saved.",
+    };
+  } catch (err) {
+    return fail(err, "Failed to save feed settings.");
+  }
+}
+
+export async function sendDiscordTest(): Promise<ActionResult> {
+  try {
+    await requireUser();
+    const res = await sendTestAlert();
+    return { ok: res.ok, message: res.message };
+  } catch (err) {
+    return fail(err, "Test failed.");
+  }
+}
+
+export async function checkAlertsNow(): Promise<ActionResult> {
+  try {
+    await requireUser();
+    const res = await runAlertCheck();
+    revalidatePath("/settings");
+    return { ok: res.ok, message: res.message };
+  } catch (err) {
+    return fail(err, "Check failed.");
   }
 }

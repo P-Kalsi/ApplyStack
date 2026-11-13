@@ -27,3 +27,4 @@ npm-debug.log*
 
 # per-user AI backend choice (contains no secrets, but is personal)
 applystack.config.json
+.applystack-alerts.json

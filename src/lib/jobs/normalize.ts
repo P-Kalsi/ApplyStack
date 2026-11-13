@@ -181,3 +181,32 @@ export function buildNormalizedJob(input: {
     dedupe_key: makeDedupeKey({ company, title, location, url: input.url ?? null }),
   };
 }
+
+/**
+ * Fields to update when a job gets its description later (fetched from the
+ * posting link or pasted). Keeps existing categories and only upgrades an
+ * unknown employment type.
+ */
+export function descriptionPatch(
+  job: { title: string; location: string | null; categories: string[]; employment_type: EmploymentType },
+  html: string | null,
+  text: string
+) {
+  const n = buildNormalizedJob({
+    source: "manual",
+    company: "-",
+    title: job.title,
+    location: job.location,
+    description_html: html,
+    description_text: text.trim(),
+  });
+  return {
+    description_html: html,
+    description_text: n.description_text,
+    skills: n.skills,
+    ats_keywords: n.ats_keywords,
+    categories: Array.from(new Set([...job.categories, ...n.categories])),
+    work_mode: n.work_mode,
+    ...(job.employment_type === "other" ? { employment_type: n.employment_type } : {}),
+  };
+}

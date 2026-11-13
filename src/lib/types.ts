@@ -3,7 +3,7 @@
 
 export type WorkMode = "remote" | "hybrid" | "onsite" | "unknown";
 export type EmploymentType = "internship" | "newgrad" | "fulltime" | "other";
-export type JobSource = "greenhouse" | "lever" | "seed" | "manual";
+export type JobSource = "greenhouse" | "lever" | "seed" | "manual" | "simplify";
 
 export type JobCategory =
   | "software-engineering"
@@ -46,6 +46,8 @@ export interface JobRow {
   ats_keywords: string[];
   posted_at: string | null;
   dedupe_key: string;
+  /** false once the posting disappears from its feed (Simplify). */
+  is_open?: boolean;
   created_at: string;
   updated_at: string;
 }

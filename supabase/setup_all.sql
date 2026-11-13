@@ -1,5 +1,5 @@
 -- ApplyStack: full database setup. Paste this whole file into Supabase → SQL Editor → Run.
--- Generated from migrations 0001-0005 (same content, in order). Run it ONCE, on a new, empty project.
+-- Generated from migrations 0001-0006 (same content, in order). Run it ONCE, on a new, empty project.
 -- Sample jobs are NOT included; they live in seed.sql and are fictional, so skip them for real use.
 
 
@@ -436,4 +436,23 @@ alter table public.job_analyses
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
+
+
+-- ===== migrations/0006_simplify_feed.sql =====
+
+-- Internship feed from Simplify's public list, plus jobs added by hand.
+--   jobs.source  may now be 'simplify'
+--   jobs.is_open turns false when a posting leaves its feed (closed listings
+--                stay linked to your applications but leave Discover)
+
+alter table public.jobs
+  drop constraint if exists jobs_source_check;
+alter table public.jobs
+  add constraint jobs_source_check
+  check (source in ('greenhouse', 'lever', 'seed', 'manual', 'simplify'));
+
+alter table public.jobs
+  add column if not exists is_open boolean not null default true;
+
+create index if not exists jobs_open_posted_idx on public.jobs (is_open, posted_at desc nulls last);
 

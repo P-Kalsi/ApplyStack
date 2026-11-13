@@ -17,7 +17,8 @@ export const DEMO_USER = { id: "00000000-0000-4000-8000-000000000001", email: "d
 type Row = Record<string, unknown>;
 type Tables = Record<string, Row[]>;
 
-const FILE = join(process.cwd(), ".demo-data.json");
+/** Where demo data is saved (APPLYSTACK_DEMO_FILE overrides, used by tests). */
+const dataFile = () => process.env.APPLYSTACK_DEMO_FILE || join(process.cwd(), ".demo-data.json");
 
 const DEFAULTS: Record<string, Row> = {
   career_education: { sort_order: 0, coursework: [] },
@@ -26,7 +27,7 @@ const DEFAULTS: Record<string, Row> = {
   career_skills: { sort_order: 0, items: [] },
   career_facts: { category: "general", keywords: [], source: "manual", status: "approved", experience_id: null, project_id: null },
   master_resumes: { title: "Master resume", format: "latex", is_active: true, template_base64: null, file_name: null },
-  jobs: { work_mode: "unknown", employment_type: "other", categories: [], skills: [], ats_keywords: [] },
+  jobs: { work_mode: "unknown", employment_type: "other", categories: [], skills: [], ats_keywords: [], is_open: true },
   job_analyses: { engine: "offline" },
   resume_versions: { format: "latex", status: "draft", keywords_added: [], skills_emphasized: [], still_missing: [] },
   resume_changes: { change_type: "rewrite", fact_ids: [], keywords: [], is_safe: true, status: "proposed" },
@@ -79,14 +80,20 @@ const store = globalThis as unknown as { __applystackDemo?: Tables };
 
 function db(): Tables {
   if (!store.__applystackDemo) {
-    store.__applystackDemo = existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Tables) : seed();
+    store.__applystackDemo = existsSync(dataFile()) ? (JSON.parse(readFileSync(dataFile(), "utf8")) as Tables) : seed();
+    // Rows saved by older versions may lack newer columns: fill their defaults.
+    for (const [name, defaults] of Object.entries(DEFAULTS)) {
+      for (const row of store.__applystackDemo[name] ?? []) {
+        for (const [k, v] of Object.entries(defaults)) if (!(k in row)) row[k] = Array.isArray(v) ? [...v] : v;
+      }
+    }
   }
   return store.__applystackDemo;
 }
 
 function persist() {
   try {
-    writeFileSync(FILE, JSON.stringify(db()));
+    writeFileSync(dataFile(), JSON.stringify(db()));
   } catch {
     // read-only filesystem: keep data in memory only
   }
@@ -153,6 +160,7 @@ class Query implements PromiseLike<Result> {
   private payload: Row[] = [];
   private patch: Row = {};
   private conflict: string[] = [];
+  private ignoreDuplicates = false;
   private returning = false;
   private singleMode: "one" | "maybe" | null = null;
 
@@ -174,8 +182,9 @@ class Query implements PromiseLike<Result> {
     this.payload = Array.isArray(rows) ? rows : [rows];
     return this;
   }
-  upsert(rows: Row | Row[], opts?: { onConflict?: string; count?: string }) {
+  upsert(rows: Row | Row[], opts?: { onConflict?: string; count?: string; ignoreDuplicates?: boolean }) {
     this.mode = "upsert";
+    this.ignoreDuplicates = Boolean(opts?.ignoreDuplicates);
     this.payload = Array.isArray(rows) ? rows : [rows];
     this.conflict = (opts?.onConflict ?? "id").split(",").map((s) => s.trim());
     this.countMode = opts?.count === "exact";
@@ -193,6 +202,10 @@ class Query implements PromiseLike<Result> {
   }
   eq(col: string, value: unknown) {
     this.filters.push((r) => r[col] === value);
+    return this;
+  }
+  is(col: string, value: null | boolean) {
+    this.filters.push((r) => (value === null ? r[col] == null : r[col] === value));
     return this;
   }
   in(col: string, values: unknown[]) {
@@ -322,6 +335,7 @@ class Query implements PromiseLike<Result> {
       for (const r of this.payload) {
         const existing = table(this.name).find((x) => this.conflict.every((c) => x[c] === r[c]));
         if (existing) {
+          if (this.ignoreDuplicates) continue; // ON CONFLICT DO NOTHING
           Object.assign(existing, this.stamp({ ...r }, false));
           out.push(existing);
         } else {

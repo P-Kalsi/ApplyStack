@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { RefreshCw, Search } from "lucide-react";
+import Link from "next/link";
+import { Plus, RefreshCw, Search } from "lucide-react";
 import { JOB_CATEGORIES } from "@/lib/types";
 import { Input, Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { refreshJobs } from "./actions";
+import { refreshJobs, refreshJobsIfStale } from "./actions";
 
 export function DiscoverFilters() {
   const router = useRouter();
@@ -19,6 +20,23 @@ export function DiscoverFilters() {
   const [search, setSearch] = useState(params.get("q") || "");
   const [location, setLocation] = useState(params.get("location") || "");
   const debounceRef = useRef<number | null>(null);
+  const autoRan = useRef(false);
+
+  // Opening Discover pulls the internship feed if it's more than 30 minutes old.
+  useEffect(() => {
+    if (autoRan.current) return;
+    autoRan.current = true;
+    setRefreshing(true);
+    refreshJobsIfStale()
+      .then((res) => {
+        if (!res.refreshed) return;
+        if (!res.ok) toast(res.message, "error");
+        else if (res.added) toast(`${res.added} new internship${res.added === 1 ? "" : "s"} from the feed.`, "success");
+        router.refresh();
+      })
+      .catch(() => undefined)
+      .finally(() => setRefreshing(false));
+  }, [router, toast]);
 
   const setParams = useCallback(
     (mutate: (p: URLSearchParams) => void) => {
@@ -110,16 +128,24 @@ export function DiscoverFilters() {
             try {
               const res = await refreshJobs();
               toast(res.message, res.ok ? "success" : "error");
+              router.refresh();
             } finally {
               setRefreshing(false);
             }
           }}
           loading={refreshing}
-          title="Fetch fresh postings from configured Greenhouse/Lever sources"
+          title="Pull new postings from the internship feed and your company boards"
         >
           {refreshing ? null : <RefreshCw className="h-3.5 w-3.5" aria-hidden />}
           Refresh sources
         </Button>
+        <Link
+          href="/jobs/new"
+          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line bg-surface-raised px-3 text-sm font-medium text-ink hover:border-line-strong"
+          title="Add a posting from any site by pasting its link or description"
+        >
+          <Plus className="h-3.5 w-3.5" aria-hidden /> Add job
+        </Link>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
         <FilterChip active={boolParam("internship")} onClick={() => toggleBool("internship")}>

@@ -59,7 +59,13 @@ export function JobCard({
             {job.title}
           </Link>
         </div>
-        <ScoreBadge score={match.overall} />
+        {job.description_text ? (
+          <ScoreBadge score={match.overall} />
+        ) : (
+          <Badge tone="warn" title="No description yet: open the job to fetch or paste it, then you'll get a match score">
+            No description
+          </Badge>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 text-2xs text-ink-faint">
@@ -120,6 +126,15 @@ export function JobCard({
           )}
           {isSaved ? "Saved" : "Save"}
         </Button>
+        {!job.description_text ? (
+          <Link
+            href={`/jobs/${job.id}`}
+            className="inline-flex h-7 items-center gap-1 rounded-md bg-accent px-2.5 text-xs font-medium text-white hover:opacity-90"
+            title="Open the job to fetch or paste its description"
+          >
+            Add description
+          </Link>
+        ) : (
         <Button
           size="sm"
           variant="primary"
@@ -144,6 +159,7 @@ export function JobCard({
           {tailoring ? null : <Sparkles className="h-3.5 w-3.5" aria-hidden />}
           Tailor Resume
         </Button>
+        )}
         <Link
           href={`/jobs/${job.id}`}
           className="ml-auto inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-ink-muted hover:bg-surface-sunken hover:text-ink"

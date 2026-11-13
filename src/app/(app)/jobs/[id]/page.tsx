@@ -13,6 +13,8 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { displaySkill, timeAgo } from "@/lib/utils";
 import { AnalyzeButton } from "./analyze-button";
 import { TailorButton } from "./tailor-button";
+import { DescriptionPanel } from "./description-panel";
+import { canFetchDescription } from "@/lib/jobs/posting";
 
 export const metadata: Metadata = { title: "Job details" };
 
@@ -48,6 +50,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const topExperiences = rankExperiences(job, vault).filter((r) => r.score > 0).slice(0, 3);
 
   const paragraphs = (job.description_text || "").split(/\n{2,}/).filter(Boolean);
+  const hasDescription = paragraphs.length > 0;
 
   return (
     <div className="space-y-3">
@@ -83,8 +86,12 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <ScoreBadge score={match.overall} label="Your deterministic match score" />
-          <TailorButton jobId={job.id} />
+          {hasDescription ? (
+            <>
+              <ScoreBadge score={match.overall} label="Your deterministic match score" />
+              <TailorButton jobId={job.id} />
+            </>
+          ) : null}
           {job.url ? (
             <a
               href={job.url}
@@ -102,20 +109,28 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         {/* Left: description */}
         <Card className="lg:col-span-2">
           <CardHeader title="Full description" />
-          <div className="space-y-3 px-4 py-3 text-sm leading-6 text-ink">
-            {paragraphs.length ? (
-              paragraphs.map((p, i) => (
+          {hasDescription ? (
+            <div className="space-y-3 px-4 py-3 text-sm leading-6 text-ink">
+              {paragraphs.map((p, i) => (
                 <p key={i} className="whitespace-pre-line">
                   {p}
                 </p>
-              ))
-            ) : (
-              <p className="text-ink-muted">No description available from this source.</p>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <DescriptionPanel jobId={job.id} canFetch={canFetchDescription(job.url)} url={job.url} />
+          )}
         </Card>
 
-        {/* Right: signals */}
+        {/* Right: signals (need a description to mean anything) */}
+        {!hasDescription ? (
+          <Card className="self-start">
+            <CardHeader
+              title="Your match"
+              description="Your match score, matched and missing skills, and ATS keywords appear once the description is added."
+            />
+          </Card>
+        ) : (
         <div className="space-y-3">
           <Card>
             <CardHeader
@@ -209,6 +224,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             </div>
           </Card>
         </div>
+        )}
       </div>
 
       {/* AI analysis */}
@@ -220,7 +236,9 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               ? `Engine: ${analysisRow.engine === "offline" || analysisRow.engine === "mock" ? "offline (deterministic)" : `${analysisRow.engine} · ${analysisRow.model}`} · updated ${timeAgo(analysisRow.updated_at as string)}`
               : "Structured breakdown of requirements, compared against your vault"
           }
-          actions={<AnalyzeButton jobId={job.id} hasAnalysis={Boolean(analysisRow)} />}
+          actions={
+            hasDescription ? <AnalyzeButton jobId={job.id} hasAnalysis={Boolean(analysisRow)} /> : undefined
+          }
         />
         {analysis && report ? (
           <div className="grid grid-cols-1 gap-4 px-4 py-3 md:grid-cols-2">
@@ -261,8 +279,9 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           </div>
         ) : (
           <div className="px-4 py-6 text-center text-xs text-ink-muted">
-            Not analyzed yet. Run the analysis to get structured requirements, a guarded match
-            score, and keyword-level evidence.
+            {hasDescription
+              ? "Not analyzed yet. Run the analysis to get structured requirements, a guarded match score, and keyword-level evidence."
+              : "Add the job description first (left), then analyze and tailor."}
           </div>
         )}
       </Card>
