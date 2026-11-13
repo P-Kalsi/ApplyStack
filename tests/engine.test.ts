@@ -25,6 +25,16 @@ test("reorderTrailingList moves prioritized items first without adding/removing"
   assert.ok(out!.endsWith("."));
 });
 
+test("reorderTrailingList leaves sentence clauses alone", () => {
+  assert.equal(
+    reorderTrailingList(
+      "Led an AI-assisted workflow: wrote a 9-phase spec with acceptance gates, used Claude Opus as a coding agent, and delivered ~20K lines of C++/Python",
+      new Set(["python"])
+    ),
+    null
+  );
+});
+
 test("reorderTrailingList returns null when nothing changes", () => {
   assert.equal(
     reorderTrailingList("Built X using React, Flask, Python.", new Set(["react"])),

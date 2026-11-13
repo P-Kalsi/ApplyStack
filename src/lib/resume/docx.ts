@@ -231,10 +231,13 @@ export function rebuildBulletParagraph(p: string, text: string): string {
 export function rebuildSkillsParagraph(p: string, value: string): string {
   const { open, pPr } = paragraphShell(p);
   const runs = p.match(RUN_RE) ?? [];
+  // Whitespace between the colon and the first value character, wherever it lives.
+  const full = paragraphText(p);
+  const gap = full.slice(full.indexOf(":") + 1).match(/^[ \t]*/)?.[0] ?? "";
   const out: string[] = [];
   let valueRPr: string | null = null;
   let labelDone = false;
-  let lead = " ";
+  let lead = gap || " ";
 
   for (const run of runs) {
     if (labelDone) {
@@ -249,9 +252,9 @@ export function rebuildSkillsParagraph(p: string, value: string): string {
     }
     labelDone = true;
     const after = t.slice(colon + 1);
-    lead = after.match(/^\s*/)?.[0] || " ";
     if (after.trim().length === 0) {
-      out.push(run); // label run ends at the colon
+      out.push(run); // label run ends at the colon (possibly with trailing spaces)
+      lead = gap.slice(after.length); // spaces already inside the label run aren't repeated
     } else {
       // Label and value share a run: split it at the colon.
       out.push(textRun(runRPr(run), t.slice(0, colon + 1)));

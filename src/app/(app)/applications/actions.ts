@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient, requireUser } from "@/lib/supabase/server";
 import { APPLICATION_STATUSES, type ApplicationStatus } from "@/lib/types";
+import { dedupeKey, importApplicationsCsv } from "@/lib/applications/csv-import";
 
 export interface ActionResult {
   ok: boolean;
@@ -98,5 +99,49 @@ export async function deleteApplication(id: string): Promise<ActionResult> {
     return { ok: true, message: "Application deleted." };
   } catch (err) {
     return fail(err, "Failed to delete application.");
+  }
+}
+
+/**
+ * Import applications from a CSV export of a spreadsheet tracker.
+ * Rows that already exist (same company + role) are skipped, so importing
+ * the same file twice is safe.
+ */
+export async function importApplications(fd: FormData): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const supabase = await createClient();
+    const file = fd.get("file");
+    if (!(file instanceof File)) return { ok: false, message: "Choose a .csv file." };
+    if (file.size > 2 * 1024 * 1024) return { ok: false, message: "CSV is over 2 MB." };
+
+    const { rows, skipped } = importApplicationsCsv(await file.text());
+    if (rows.length === 0) {
+      return { ok: false, message: skipped[0]?.reason ?? "No rows to import." };
+    }
+
+    const { data: existing, error: exErr } = await supabase
+      .from("applications")
+      .select("company, role")
+      .eq("user_id", user.id);
+    if (exErr) throw new Error(exErr.message);
+    const known = new Set((existing || []).map((a) => dedupeKey(a.company as string, a.role as string)));
+
+    const fresh = rows.filter((r) => !known.has(dedupeKey(r.company, r.role)));
+    if (fresh.length > 0) {
+      const { error } = await supabase
+        .from("applications")
+        .insert(fresh.map((r) => ({ user_id: user.id, ...r })));
+      if (error) throw new Error(error.message);
+    }
+    revalidatePath("/applications");
+
+    const already = rows.length - fresh.length;
+    const parts = [`Imported ${fresh.length} application(s)`];
+    if (already) parts.push(`${already} already tracked`);
+    if (skipped.length) parts.push(`${skipped.length} row(s) skipped`);
+    return { ok: true, message: parts.join(" · ") + "." };
+  } catch (err) {
+    return fail(err, "Import failed.");
   }
 }

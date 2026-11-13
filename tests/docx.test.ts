@@ -160,6 +160,22 @@ test("skills rewrite keeps the bold label and only replaces the values", () => {
   assert.equal(reparsed[1].text, "TypeScript, SQL, Python, Java");
 });
 
+test("skills rewrite never doubles the space after the label", () => {
+  const original = r(BOLD, "Technical Skills:") + r(RPR, " REST APIs (Flask, FastAPI), PostgreSQL, Docker, Git, AWS");
+  assert.ok(DOC.includes(original));
+  // Variant where the space after the colon lives inside the bold label run.
+  const doc = DOC.replace(original, r(BOLD, "Technical Skills: ") + r(RPR, "REST APIs (Flask, FastAPI), PostgreSQL, Docker, Git, AWS"));
+  const skills = getBullets(parseDocxResume(doc)).filter((b) => b.role === "skills");
+  const out = applyChangesToDocument(
+    doc,
+    [{ block_id: skills[0].id, change_type: "skills_reorder", status: "accepted", current_text: "Docker, AWS" }],
+    "docx"
+  );
+  const reparsed = getBullets(parseDocxResume(out)).filter((b) => b.role === "skills");
+  assert.equal(reparsed[0].text, "Docker, AWS");
+  assert.ok(/Technical Skills: <\/w:t><\/w:r><w:r>(<w:rPr>(?:(?!<\/w:rPr>)[\s\S])*<\/w:rPr>)?<w:t xml:space="preserve">Docker/.test(out), "exactly one space");
+});
+
 test("removing a bullet drops only that paragraph", () => {
   const bullets = getBullets(parseDocxResume(DOC));
   const out = applyChangesToDocument(

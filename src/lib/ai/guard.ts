@@ -85,6 +85,7 @@ export interface GuardResult {
  * Soft flags (kept, but is_safe=false so "Accept all safe" skips them):
  *  - rewrite cites no supporting facts
  *  - rewrite is much longer than the original (page-length risk)
+ *  - any removal (truthful, but always a human decision)
  *  - cited fact ids that do not resolve to approved facts
  */
 export function guardTailorChanges(
@@ -110,10 +111,12 @@ export function guardTailorChanges(
       : latexToPlain(change.tailored_text);
 
     if (change.action === "remove") {
+      // Removing content is truthful but a judgment call: it always needs an
+      // explicit decision and is never part of "Accept all safe changes".
       accepted.push({
         ...change,
         tailored_text: "",
-        is_safe: true,
+        is_safe: false,
         original_text: bullet.text,
         section: bullet.section,
       });

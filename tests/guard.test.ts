@@ -128,7 +128,7 @@ test("guard marks rewrites without supporting facts as unsafe (not dropped)", ()
   assert.equal(accepted[0].is_safe, false);
 });
 
-test("removals are always safe and carry original text", () => {
+test("removals always need explicit review and carry original text", () => {
   const { accepted } = guardTailorChanges(
     [
       {
@@ -144,7 +144,7 @@ test("removals are always safe and carry original text", () => {
     facts,
     vaultSkills
   );
-  assert.equal(accepted[0].is_safe, true);
+  assert.equal(accepted[0].is_safe, false);
   assert.equal(accepted[0].tailored_text, "");
   assert.equal(accepted[0].original_text, webForm.text);
 });

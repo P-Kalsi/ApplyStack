@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Briefcase,
   ChevronLeft,
@@ -13,6 +13,7 @@ import {
   Plus,
   Table2,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { APPLICATION_STATUSES, type ApplicationRow, type ApplicationStatus } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +23,7 @@ import { Confirm } from "@/components/ui/confirm";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatDate } from "@/lib/utils";
-import { deleteApplication, moveApplication, upsertApplication } from "./actions";
+import { deleteApplication, importApplications, moveApplication, upsertApplication } from "./actions";
 
 export interface VersionOption {
   id: string;
@@ -84,6 +85,7 @@ export function ApplicationsClient({
               <Table2 className="h-3.5 w-3.5" aria-hidden /> Table
             </button>
           </div>
+          <ImportCsvButton />
           <Button size="sm" variant="primary" onClick={() => setAdding(true)}>
             <Plus className="h-3.5 w-3.5" aria-hidden /> Add manually
           </Button>
@@ -105,7 +107,7 @@ export function ApplicationsClient({
         <EmptyState
           icon={<Briefcase className="h-6 w-6" />}
           title="No applications yet"
-          description="Save a job on the Discover board (it lands here automatically) or add one manually."
+          description="Save a job on the Discover board (it lands here automatically), import a CSV from your spreadsheet, or add one manually."
         />
       ) : view === "kanban" ? (
         <KanbanBoard applications={applications} onEdit={setEditing} />
@@ -113,6 +115,47 @@ export function ApplicationsClient({
         <ApplicationsTable applications={applications} versions={versions} onEdit={setEditing} />
       )}
     </div>
+  );
+}
+
+function ImportCsvButton() {
+  const { toast } = useToast();
+  const router = useRouter();
+  const ref = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="secondary"
+        loading={busy}
+        onClick={() => ref.current?.click()}
+        title="Import from a spreadsheet export (App Date, Org, Job Title, Posting, Site, Interview, Decision…)"
+      >
+        {busy ? null : <Upload className="h-3.5 w-3.5" aria-hidden />} Import CSV
+      </Button>
+      <input
+        ref={ref}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (!file) return;
+          setBusy(true);
+          try {
+            const fd = new FormData();
+            fd.set("file", file);
+            const res = await importApplications(fd);
+            toast(res.message, res.ok ? "success" : "error");
+            if (res.ok) router.refresh();
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
+    </>
   );
 }
 

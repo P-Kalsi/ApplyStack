@@ -126,6 +126,12 @@ export function mockTailor(job: JobRow, vault: VaultSnapshot, bullets: BulletBlo
     (b) => extractSkills(bulletPlain(b)).some((s) => prioritized.has(s))
   );
 
+  // Removal is conservative: at most 2 suggestions, never a bullet carrying a
+  // metric, never the last bullet of a job/project, lowest-relevance first.
+  const MAX_REMOVALS = 2;
+  let removals = 0;
+  const hasMetric = (b: BulletBlock) => /\d/.test(bulletPlain(b));
+
   // Bullets per entry (job/project), so removals never empty an entry.
   const entryKey = (b: BulletBlock) => `${b.section ?? ""}::${b.entry ?? ""}`;
   const remainingPerEntry = new Map<string, number>();
@@ -155,17 +161,20 @@ export function mockTailor(job: JobRow, vault: VaultSnapshot, bullets: BulletBlo
     const key = entryKey(bullet);
     if (
       isProject &&
+      removals < MAX_REMOVALS &&
+      !hasMetric(bullet) &&
       relevantProjectBullets.length >= 2 &&
       (remainingPerEntry.get(key) ?? 0) > 1 &&
       !extractSkills(bulletPlain(bullet)).some((s) => prioritized.has(s))
     ) {
       remainingPerEntry.set(key, (remainingPerEntry.get(key) ?? 0) - 1);
+      removals++;
       changes.push({
         block_id: bullet.id,
         action: "remove",
         tailored_text: "",
         reason:
-          "This bullet does not mention any skill the job asks for; removing it makes room to emphasize matching work.",
+          "Optional: this bullet doesn't mention any skill the job asks for. Removing it would make room for more relevant work; keep it if the page has space.",
         fact_ids: [],
         keywords: [],
       });

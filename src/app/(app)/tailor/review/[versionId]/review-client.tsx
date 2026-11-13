@@ -326,8 +326,12 @@ function ChangeCard({
           <Badge tone="good" title="Backed by verified Career Vault facts">
             <ShieldCheck className="h-3 w-3" aria-hidden /> safe
           </Badge>
+        ) : change.change_type === "remove" ? (
+          <Badge tone="warn" title="Removing content is always your call; never bulk-accepted">
+            <ShieldAlert className="h-3 w-3" aria-hidden /> your call
+          </Badge>
         ) : (
-          <Badge tone="warn" title="No supporting vault fact cited — review carefully">
+          <Badge tone="warn" title="No supporting vault fact cited, or much longer than the original — review carefully">
             <ShieldAlert className="h-3 w-3" aria-hidden /> needs review
           </Badge>
         )}

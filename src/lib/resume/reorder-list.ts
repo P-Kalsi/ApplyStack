@@ -38,6 +38,11 @@ export function reorderList(list: string, prioritized: Set<string>): string | nu
   const body = trailing ? trimmed.slice(0, -1) : trimmed;
   const items = splitListItems(body);
   if (items.length < 3) return null;
+  // Only reorder lists of short, skill-like items. Long items are clauses of
+  // a sentence ("wrote a spec, used X, delivered Y"); shuffling them changes
+  // the meaning and reads badly.
+  const isShort = (it: string) => it.replace(/\([^)]*\)/g, "").trim().split(/\s+/).length <= 4 && it.length <= 45;
+  if (!items.every(isShort)) return null;
 
   const hadAnd = /^and\s+/i.test(items[items.length - 1]);
   const cleaned = items.map((it) => it.replace(/^and\s+/i, ""));
