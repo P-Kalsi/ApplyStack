@@ -123,7 +123,7 @@ export function EducationEditor({ education }: { education: EducationRow[] }) {
                   {row.location ? ` · ${row.location}` : ""}
                 </p>
                 {row.coursework.length ? (
-                  <p className="mt-1 text-2xs text-ink-faint">
+                  <p className="mt-1 text-xs text-ink-faint">
                     Coursework: {row.coursework.join(", ")}
                   </p>
                 ) : null}

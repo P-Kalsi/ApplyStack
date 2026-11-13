@@ -36,10 +36,10 @@ export default async function SettingsPage() {
   });
 
   return (
-    <div className="max-w-3xl space-y-3">
+    <div className="max-w-3xl space-y-5">
       <div>
-        <h1 className="text-base font-semibold text-ink">Settings</h1>
-        <p className="text-xs text-ink-muted">Profile, internship feed and alerts, company boards, and AI backend.</p>
+        <h1 className="text-title text-ink">Settings</h1>
+        <p className="mt-1 text-sm text-ink-muted">Profile, internship feed and alerts, company boards, and AI backend.</p>
       </div>
 
       <Card>

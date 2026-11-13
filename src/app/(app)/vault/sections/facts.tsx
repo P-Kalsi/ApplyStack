@@ -137,7 +137,7 @@ export function FactsEditor({
               </Badge>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-ink">{f.fact_text}</p>
-                <p className="mt-0.5 text-2xs text-ink-faint">
+                <p className="mt-0.5 text-xs text-ink-faint">
                   {f.experience_id ? experienceName.get(f.experience_id) : null}
                   {f.project_id ? projectName.get(f.project_id) : null}
                   {!f.experience_id && !f.project_id ? "General" : null}

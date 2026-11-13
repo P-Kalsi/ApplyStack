@@ -121,7 +121,7 @@ export function SourcesManager({
       </form>
 
       {envSources.length ? (
-        <div className="text-2xs text-ink-faint">
+        <div className="text-xs text-ink-faint">
           From environment ({envSources.length}):{" "}
           {envSources.map((s) => `${s.kind}:${s.token}`).join(", ")} — manage these in .env.
         </div>
@@ -136,13 +136,13 @@ export function SourcesManager({
         <ul className="divide-y divide-line rounded-md border border-line">
           {sources.map((s) => (
             <li key={s.id} className="flex items-center gap-2 px-3 py-2 text-xs">
-              <Badge tone="accent" className="uppercase">
+              <Badge tone="neutral" className="uppercase">
                 {s.kind}
               </Badge>
               <span className="font-mono text-ink">{s.token}</span>
               {s.label ? <span className="text-ink-faint">({s.label})</span> : null}
               <span className="ml-auto" />
-              <label className="flex items-center gap-1.5 text-2xs text-ink-muted">
+              <label className="flex items-center gap-1.5 text-xs text-ink-muted">
                 <input
                   type="checkbox"
                   checked={s.enabled}

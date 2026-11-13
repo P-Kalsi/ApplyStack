@@ -31,8 +31,10 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
       aria-pressed={on}
       onClick={onClick}
       className={cn(
-        "rounded-full border px-2.5 py-0.5 text-xs",
-        on ? "border-accent bg-accent/10 text-ink" : "border-line text-ink-muted hover:border-line-strong"
+        "inline-flex h-7 items-center rounded-full border px-3 text-xs font-medium transition-colors [@media(pointer:coarse)]:h-10",
+        on
+          ? "border-accent/40 bg-accent-soft text-accent"
+          : "border-line bg-surface-raised text-ink-muted hover:border-line-strong hover:text-ink"
       )}
     >
       {children}
@@ -76,7 +78,7 @@ export function FeedAlertsCard({ regions, categories, termOptions, notListed, se
           <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
           Pull internships from Simplify&apos;s public internship list
         </label>
-        <p className="text-2xs text-ink-muted">
+        <p className="text-xs text-ink-muted">
           The community-kept list behind github.com/SimplifyJobs. Covers most companies (Workday ones included).
           It&apos;s one file, so ApplyStack downloads it at most every 30 minutes and pages through it locally;
           only the jobs on the page you&apos;re viewing are saved. These filters decide what the feed contains;
@@ -92,7 +94,7 @@ export function FeedAlertsCard({ regions, categories, termOptions, notListed, se
               </Chip>
             ))}
           </div>
-          {selRegions.length === 0 ? <p className="text-2xs text-warn">No location picked: every location is included.</p> : null}
+          {selRegions.length === 0 ? <p className="text-xs text-warn">No location picked: every location is included.</p> : null}
         </div>
 
         <div className="space-y-1">
@@ -107,7 +109,7 @@ export function FeedAlertsCard({ regions, categories, termOptions, notListed, se
               Term not listed
             </Chip>
           </div>
-          <p className="text-2xs text-ink-muted">
+          <p className="text-xs text-ink-muted">
             {terms.length === 0 ? "None picked: any term is included." : "Only listings for the picked terms."}
           </p>
         </div>
@@ -137,7 +139,7 @@ export function FeedAlertsCard({ regions, categories, termOptions, notListed, se
           )}
         </div>
         {webhook !== "ok" ? (
-          <p className="rounded-md border border-line bg-surface px-3 py-2 text-2xs text-ink-muted">
+          <p className="rounded-md border border-line bg-surface px-3 py-2 text-xs text-ink-muted">
             In your Discord server: channel settings → Integrations → Webhooks → New Webhook → Copy Webhook URL. Put it in
             .env.local as <code>DISCORD_WEBHOOK_URL=…</code> and restart ApplyStack. Treat that link like a password:
             anyone with it can post in your channel.
@@ -162,7 +164,7 @@ export function FeedAlertsCard({ regions, categories, termOptions, notListed, se
             ))}
           </Select>
         </div>
-        <p className="text-2xs text-ink-muted">
+        <p className="text-xs text-ink-muted">
           Uses the filters above. Checks run only while ApplyStack is running on this computer; turn alerts on for one
           computer only, or you&apos;ll get each alert twice. The first check just records what&apos;s already open.
           {alertState.last_run_at

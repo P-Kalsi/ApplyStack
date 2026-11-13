@@ -67,7 +67,7 @@ export function LlmBackendCard({ providers, defaults, keyEnv, settings, status: 
       }}
     >
       {settings.source === "env" ? (
-        <p className="rounded-md border border-warn/30 bg-warn/10 px-3 py-2 text-2xs text-ink">
+        <p className="rounded-md border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-ink">
           APPLYSTACK_LLM_PROVIDER is set in your environment and overrides the choice below until you remove it.
         </p>
       ) : null}
@@ -107,7 +107,7 @@ export function LlmBackendCard({ providers, defaults, keyEnv, settings, status: 
         </div>
       </div>
 
-      <p className="text-2xs text-ink-muted">
+      <p className="text-xs text-ink-muted">
         {SETUP[provider]}
         {provider !== "claude_cli" && provider !== "offline"
           ? ` Keys are read from ${keyEnv[provider]} only and are never saved by ApplyStack.`
@@ -132,7 +132,7 @@ export function LlmBackendCard({ providers, defaults, keyEnv, settings, status: 
           </div>
         </div>
       ) : (
-        <p className="text-2xs text-ink-faint">Save to switch backends and run the readiness check.</p>
+        <p className="text-xs text-ink-faint">Save to switch backends and run the readiness check.</p>
       )}
 
       <div className="flex flex-wrap items-center gap-2">

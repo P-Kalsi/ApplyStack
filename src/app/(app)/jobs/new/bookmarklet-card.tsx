@@ -36,7 +36,7 @@ export function BookmarkletCard() {
             e.preventDefault();
             toast("Drag the button to your bookmarks bar; clicking it here does nothing.", "info");
           }}
-          className="inline-flex h-9 cursor-grab items-center gap-1.5 rounded-md bg-accent px-3.5 text-sm font-medium text-white shadow-sm active:cursor-grabbing"
+          className="inline-flex h-9 cursor-grab items-center gap-1.5 rounded-md bg-accent px-4 text-sm font-medium text-accent-ink transition-colors hover:bg-accent-hover active:cursor-grabbing"
           title="Drag me to your bookmarks bar"
         >
           <BookmarkPlus className="h-4 w-4" aria-hidden /> Send to ApplyStack
@@ -58,7 +58,7 @@ export function BookmarkletCard() {
           <Copy className="h-3.5 w-3.5" aria-hidden /> Copy bookmark link
         </Button>
       </div>
-      <p className="text-2xs text-ink-muted">
+      <p className="text-xs text-ink-muted">
         It only reads the job page already on your screen, and only when you click it; it never loads anything from
         LinkedIn or Indeed by itself. The text goes straight to ApplyStack on this computer. Tip: if a page is
         cluttered, select the job&apos;s text first, then click the bookmark. LinkedIn&apos;s rules discourage tools that

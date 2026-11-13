@@ -94,7 +94,7 @@ export function NewJobForm() {
           <ClipboardPaste className="h-4 w-4 text-ink-muted" aria-hidden />
           <h3 className="text-sm font-medium text-ink">Paste the whole job page</h3>
         </div>
-        <p className="text-2xs text-ink-muted">
+        <p className="text-xs text-ink-muted">
           Works for LinkedIn, Indeed and any other site: on the job page press Ctrl+A, then Ctrl+C, and paste here. Your
           AI backend finds the company, title, location and description; the description is cut from the page text
           word for word, never rewritten.

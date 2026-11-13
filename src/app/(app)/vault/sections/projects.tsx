@@ -109,7 +109,7 @@ export function ProjectsEditor({ projects, facts }: { projects: ProjectRow[]; fa
                 ) : null}
                 {row.description ? <p className="mt-1 text-xs text-ink-muted">{row.description}</p> : null}
                 {row.links.length ? (
-                  <p className="mt-1 truncate text-2xs text-accent">{row.links.join(" · ")}</p>
+                  <p className="mt-1 truncate text-xs text-accent">{row.links.join(" · ")}</p>
                 ) : null}
               </div>
               <div className="flex shrink-0 gap-1">

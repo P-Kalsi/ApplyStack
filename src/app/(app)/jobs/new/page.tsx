@@ -11,8 +11,9 @@ export const metadata: Metadata = { title: "Add job" };
 export default async function NewJobPage() {
   await requireUser();
   return (
-    <div className="max-w-3xl space-y-3">
-      <Link href="/discover" className="inline-flex items-center gap-1 text-xs text-ink-muted hover:text-ink">
+    <div className="max-w-3xl space-y-4">
+      <h1 className="sr-only">Add a job</h1>
+      <Link href="/discover" className="no-print -ml-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs font-medium text-ink-muted transition-colors hover:text-ink">
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Back to Discover
       </Link>
       <Card>

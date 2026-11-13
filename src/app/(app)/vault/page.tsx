@@ -51,30 +51,33 @@ export default async function VaultPage({
   const pendingFacts = vault.facts.filter((f) => f.status === "pending").length;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-base font-semibold text-ink">Career Vault</h1>
-        <p className="text-xs text-ink-muted">
+        <h1 className="text-title text-ink">Career Vault</h1>
+        <p className="mt-1 text-sm text-ink-muted">
           The source of truth for tailoring. The AI can only use what lives here — nothing else.
         </p>
       </div>
 
-      <nav className="no-print flex flex-wrap gap-1 border-b border-line pb-2" aria-label="Vault sections">
+      <nav
+        className="no-print -mx-4 flex gap-1 overflow-x-auto border-b border-line px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0"
+        aria-label="Vault sections"
+      >
         {TABS.map((t) => (
           <Link
             key={t.key}
             href={`/vault?tab=${t.key}`}
             aria-current={tab === t.key ? "page" : undefined}
             className={cn(
-              "rounded-md px-2.5 py-1.5 text-xs font-medium",
+              "-mb-px inline-flex h-10 shrink-0 items-center whitespace-nowrap border-b-2 px-3 text-sm font-medium transition-colors [@media(pointer:coarse)]:h-11",
               tab === t.key
-                ? "bg-accent-soft text-accent"
-                : "text-ink-muted hover:bg-surface-sunken hover:text-ink"
+                ? "border-accent text-ink"
+                : "border-transparent text-ink-muted hover:border-line-strong hover:text-ink"
             )}
           >
             {t.label}
             {t.key === "facts" && pendingFacts > 0 ? (
-              <span className="ml-1 rounded-full bg-warn/20 px-1.5 text-2xs font-semibold text-warn">
+              <span className="ml-1.5 rounded-full bg-warn/15 px-1.5 text-2xs font-semibold tabular-nums text-warn">
                 {pendingFacts}
               </span>
             ) : null}

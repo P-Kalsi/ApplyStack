@@ -54,20 +54,20 @@ export function ApplicationsClient({
   const [adding, setAdding] = useState(false);
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-base font-semibold text-ink">Applications</h1>
-          <p className="text-xs text-ink-muted">{applications.length} in your pipeline</p>
+          <h1 className="text-title text-ink">Applications</h1>
+          <p className="mt-1 text-sm tabular-nums text-ink-muted">{applications.length} in your pipeline</p>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="flex rounded-md border border-line bg-surface-raised p-0.5" role="tablist">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-md border border-line-strong bg-surface-raised p-0.5" role="tablist">
             <button
               role="tab"
               aria-selected={view === "kanban"}
               onClick={() => setView("kanban")}
               className={cn(
-                "inline-flex h-7 items-center gap-1 rounded px-2 text-xs font-medium",
+                "inline-flex h-8 items-center gap-1.5 rounded-[5px] px-3 text-xs font-medium transition-colors [@media(pointer:coarse)]:min-h-[40px]",
                 view === "kanban" ? "bg-accent-soft text-accent" : "text-ink-muted hover:text-ink"
               )}
             >
@@ -78,7 +78,7 @@ export function ApplicationsClient({
               aria-selected={view === "table"}
               onClick={() => setView("table")}
               className={cn(
-                "inline-flex h-7 items-center gap-1 rounded px-2 text-xs font-medium",
+                "inline-flex h-8 items-center gap-1.5 rounded-[5px] px-3 text-xs font-medium transition-colors [@media(pointer:coarse)]:min-h-[40px]",
                 view === "table" ? "bg-accent-soft text-accent" : "text-ink-muted hover:text-ink"
               )}
             >
@@ -180,29 +180,30 @@ function KanbanBoard({
   };
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2">
+    <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
       {APPLICATION_STATUSES.map((status) => {
         const items = applications.filter((a) => a.status === status.value);
         return (
           <div key={status.value} className="w-56 shrink-0">
-            <div className="mb-1.5 flex items-center justify-between px-1">
+            <div className="mb-2 flex items-center justify-between px-1">
               <span className="text-xs font-semibold text-ink">{status.label}</span>
-              <span className="text-2xs tabular-nums text-ink-faint">{items.length}</span>
+              <span className="rounded-full bg-surface-sunken px-1.5 text-2xs font-medium tabular-nums text-ink-muted">{items.length}</span>
             </div>
-            <div className="space-y-1.5 rounded-lg bg-surface-sunken/60 p-1.5 min-h-[80px]">
+            <div className="min-h-[80px] space-y-2 rounded-lg border border-line bg-surface-sunken/60 p-2">
               {items.map((app) => (
-                <div key={app.id} className="rounded-md border border-line bg-surface-raised p-2">
+                <div key={app.id} className="rounded-md border border-line bg-surface-raised p-2.5 transition-colors hover:border-line-strong">
                   <p className="line-clamp-1 text-xs font-semibold text-ink">{app.company}</p>
-                  <p className="line-clamp-2 text-2xs text-ink-muted">{app.role}</p>
+                  <p className="line-clamp-2 text-xs text-ink-muted">{app.role}</p>
                   {app.next_action ? (
-                    <p className="mt-1 text-2xs text-warn">
+                    <p className="mt-1 text-xs text-warn">
                       → {app.next_action}
                       {app.next_action_date ? ` (${formatDate(app.next_action_date)})` : ""}
                     </p>
                   ) : null}
                   <div className="mt-1.5 flex items-center gap-0.5">
                     <button
-                      className="rounded p-1 text-ink-faint hover:bg-surface-sunken hover:text-ink disabled:opacity-30"
+                      type="button"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-surface-sunken hover:text-ink disabled:opacity-30 [@media(pointer:coarse)]:h-10 [@media(pointer:coarse)]:w-10"
                       onClick={() => move(app, -1)}
                       disabled={order.indexOf(app.status) === 0}
                       aria-label="Move to previous stage"
@@ -211,7 +212,8 @@ function KanbanBoard({
                       <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
                     <button
-                      className="rounded p-1 text-ink-faint hover:bg-surface-sunken hover:text-ink disabled:opacity-30"
+                      type="button"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-surface-sunken hover:text-ink disabled:opacity-30 [@media(pointer:coarse)]:h-10 [@media(pointer:coarse)]:w-10"
                       onClick={() => move(app, 1)}
                       disabled={order.indexOf(app.status) === order.length - 1}
                       aria-label="Move to next stage"
@@ -265,7 +267,7 @@ function ApplicationsTable({
     <Card className="overflow-x-auto">
       <table className="w-full min-w-[760px] text-left text-xs">
         <thead>
-          <tr className="border-b border-line text-2xs uppercase tracking-wide text-ink-faint">
+          <tr className="border-b border-line text-xs font-medium text-ink-faint">
             <th className="px-3 py-2 font-medium">Company</th>
             <th className="px-3 py-2 font-medium">Role</th>
             <th className="px-3 py-2 font-medium">Status</th>
@@ -288,7 +290,7 @@ function ApplicationsTable({
                     toast(res.message, res.ok ? "success" : "error");
                     router.refresh();
                   }}
-                  className="h-7 w-40 text-xs"
+                  className="h-8 w-40 text-xs"
                   aria-label={`Status for ${app.company}`}
                 >
                   {APPLICATION_STATUSES.map((s) => (

@@ -51,7 +51,7 @@ export function FactBank({
 
   return (
     <div className="space-y-1.5 border-t border-line bg-surface-sunken/50 px-4 py-3">
-      <p className="text-2xs font-medium uppercase tracking-wide text-ink-faint">
+      <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
         Fact bank ({facts.length})
       </p>
       <ul className="space-y-1">
@@ -66,7 +66,7 @@ export function FactBank({
                 </Badge>
               ) : null}
               {f.keywords.length ? (
-                <span className="ml-1.5 text-2xs text-ink-faint">
+                <span className="ml-1.5 text-xs text-ink-faint">
                   [{f.keywords.map(displaySkill).join(", ")}]
                 </span>
               ) : null}
@@ -101,7 +101,7 @@ export function FactBank({
             }
           }}
           placeholder="Add an atomic, truthful claim…"
-          className="h-7 text-xs"
+          className="h-8 text-xs"
           aria-label="New fact"
         />
         <Button size="sm" variant="secondary" onClick={add} loading={busy}>

@@ -78,7 +78,7 @@ export function VaultOverview({
             <Card className="p-3 transition-colors hover:border-line-strong">
               <Icon className="h-4 w-4 text-ink-faint" aria-hidden />
               <p className="mt-2 text-lg font-semibold tabular-nums text-ink">{count}</p>
-              <p className="text-2xs text-ink-muted">{label}</p>
+              <p className="text-xs text-ink-muted">{label}</p>
             </Card>
           </Link>
         ))}

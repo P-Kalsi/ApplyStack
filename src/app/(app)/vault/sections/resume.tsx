@@ -45,7 +45,7 @@ export function ResumeEditor({
             aria-selected={mode === value}
             onClick={() => setMode(value)}
             className={cn(
-              "h-7 rounded px-2.5 text-xs font-medium",
+              "h-8 rounded-[5px] px-3 text-xs font-medium transition-colors",
               mode === value ? "bg-accent-soft text-accent" : "text-ink-muted hover:text-ink"
             )}
           >
@@ -141,11 +141,11 @@ function CurrentMaster({ master }: { master: MasterResumeRow }) {
       <div className="max-h-[360px] space-y-3 overflow-auto px-4 py-3">
         {groups.map(([group, items]) => (
           <div key={group}>
-            <p className="mb-1 text-2xs font-semibold uppercase tracking-wide text-ink-faint">{group}</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">{group}</p>
             <ul className="space-y-0.5">
               {items.map((b) => (
                 <li key={b.id} className="flex gap-2 text-xs text-ink">
-                  <span className="w-7 shrink-0 font-mono text-2xs text-ink-faint">{b.id}</span>
+                  <span className="w-7 shrink-0 font-mono text-xs text-ink-faint">{b.id}</span>
                   <span>
                     {b.role === "skills" ? <span className="font-medium">{b.entry}: </span> : null}
                     {b.text}
