@@ -1,6 +1,8 @@
-// Engine orchestration: pick the real model or the deterministic mock, then
-// force every response through validation and the truthfulness guard.
-// Pure inputs -> validated outputs; DB glue lives in server actions.
+// Engine orchestration: run each step on the configured LLM backend (via
+// askLlm) or, when the backend is "offline", on the deterministic engine.
+// Every response goes through Zod validation and the truthfulness guard.
+// A misconfigured or failing backend raises a clear error; it never silently
+// switches engines. Pure inputs -> validated outputs; DB glue lives in actions.
 
 import type { JobRow, VaultSnapshot } from "../types";
 import { canonicalizeSkillList, extractSkills } from "../jobs/skills";
@@ -11,7 +13,8 @@ import { applyChangesToDocument } from "../resume/apply-changes";
 import { documentBullets, documentPlainText, type ResumeFormat } from "../resume/document";
 import { guardTailorChanges, sanitizeMatchReport, type GuardResult } from "./guard";
 import { mockAnalyzeJob, mockMatchReport, mockTailor } from "./mock";
-import { aiEnabled, callStructured } from "./run";
+import { callStructured } from "./structured";
+import { assertLlmReady, loadLlmSettings, type Provider, type Tier } from "./llm";
 import { jobAnalysisPrompt, matchPrompt, tailorPrompt } from "./prompts";
 import {
   JobAnalysisSchema,
@@ -22,22 +25,29 @@ import {
   type TailorResult,
 } from "./schemas";
 
-export type EngineKind = "anthropic" | "mock";
+/** Which engine produced a result: an LLM provider, or "offline". */
+export type EngineKind = Provider;
 
-async function withAi<T>(real: () => Promise<T>, mock: () => T): Promise<{ data: T; engine: EngineKind }> {
-  if (!aiEnabled()) return { data: mock(), engine: "mock" };
-  try {
-    return { data: await real(), engine: "anthropic" };
-  } catch (err) {
-    console.error("AI call failed; falling back to deterministic engine:", err);
-    return { data: mock(), engine: "mock" };
-  }
+export interface EngineRun<T> {
+  data: T;
+  engine: EngineKind;
+  /** Model that served the step, or null for offline. */
+  model: string | null;
 }
 
-export async function runJobAnalysis(job: JobRow): Promise<{ data: JobAnalysis; engine: EngineKind }> {
-  return withAi(
+async function withEngine<T>(tier: Tier, real: () => Promise<T>, offline: () => T): Promise<EngineRun<T>> {
+  const settings = loadLlmSettings();
+  if (settings.provider === "offline") return { data: offline(), engine: "offline", model: null };
+  await assertLlmReady(); // clear setup message before any work starts
+  const data = await real();
+  return { data, engine: settings.provider, model: tier === "smart" ? settings.model_smart : settings.model_fast };
+}
+
+export async function runJobAnalysis(job: JobRow): Promise<EngineRun<JobAnalysis>> {
+  return withEngine(
+    "fast",
     async () => {
-      return callStructured(JobAnalysisSchema, jobAnalysisPrompt(job));
+      return callStructured(JobAnalysisSchema, jobAnalysisPrompt(job), "fast");
     },
     () => mockAnalyzeJob(job)
   );
@@ -47,24 +57,26 @@ export async function runMatchReport(
   job: JobRow,
   analysis: JobAnalysis,
   vault: VaultSnapshot
-): Promise<{ data: MatchReport; engine: EngineKind }> {
+): Promise<EngineRun<MatchReport>> {
   const facts = selectRelevantFacts(job, vault, 24);
   const projects = rankProjects(job, vault).slice(0, 5);
   const experiences = rankExperiences(job, vault).slice(0, 5);
   const skills = Array.from(vaultSkillSet(vault)).sort();
 
-  const { data, engine } = await withAi(
+  const run = await withEngine(
+    "fast",
     async () => {
       return callStructured(
         MatchReportSchema,
-        matchPrompt(job, analysis, facts, projects, experiences, skills)
+        matchPrompt(job, analysis, facts, projects, experiences, skills),
+        "fast"
       );
     },
     () => mockMatchReport(job, vault)
   );
 
   const approvedFacts = vault.facts.filter((f) => f.status === "approved");
-  return { data: sanitizeMatchReport(data, vaultSkillSet(vault), approvedFacts), engine };
+  return { ...run, data: sanitizeMatchReport(run.data, vaultSkillSet(vault), approvedFacts) };
 }
 
 export interface TailorPipelineOutput {
@@ -74,6 +86,7 @@ export interface TailorPipelineOutput {
   scoreBefore: number;
   scoreAfter: number;
   engine: EngineKind;
+  model: string | null;
 }
 
 /** Keyword coverage of a resume document against a job's requested skills. */
@@ -103,10 +116,15 @@ export async function runTailorPipeline(
   const skills = Array.from(vaultSkillSet(vault)).sort();
   const bullets = documentBullets(masterContent, format);
 
-  // STEP 4-6: propose content changes (model or mock).
-  const { data, engine } = await withAi(
+  // STEP 4-6: propose content changes (the "smart" model writes, or offline).
+  const { data, engine, model } = await withEngine(
+    "smart",
     async () => {
-      return callStructured(TailorResultSchema, tailorPrompt(job, analysis, facts, bullets, skills, format));
+      return callStructured(
+        TailorResultSchema,
+        tailorPrompt(job, analysis, facts, bullets, skills, format),
+        "smart"
+      );
     },
     () => mockTailor(job, vault, bullets)
   );
@@ -145,5 +163,6 @@ export async function runTailorPipeline(
     scoreBefore: resumeCoverage(masterContent, job, format),
     scoreAfter: resumeCoverage(preview, job, format),
     engine,
+    model,
   };
 }

@@ -27,7 +27,7 @@ const DEFAULTS: Record<string, Row> = {
   career_facts: { category: "general", keywords: [], source: "manual", status: "approved", experience_id: null, project_id: null },
   master_resumes: { title: "Master resume", format: "latex", is_active: true, template_base64: null, file_name: null },
   jobs: { work_mode: "unknown", employment_type: "other", categories: [], skills: [], ats_keywords: [] },
-  job_analyses: { engine: "mock" },
+  job_analyses: { engine: "offline" },
   resume_versions: { format: "latex", status: "draft", keywords_added: [], skills_emphasized: [], still_missing: [] },
   resume_changes: { change_type: "rewrite", fact_ids: [], keywords: [], is_safe: true, status: "proposed" },
   applications: { status: "saved", sort_order: 0 },

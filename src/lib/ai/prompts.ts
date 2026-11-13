@@ -12,7 +12,6 @@ import type { JobAnalysis } from "./schemas";
 export interface BuiltPrompt {
   system: string;
   user: string;
-  maxTokens: number;
 }
 
 const JSON_ONLY =
@@ -49,7 +48,6 @@ Return JSON with exactly these keys:
   "hard_requirements": string[],
   "soft_requirements": string[]
 }`,
-    maxTokens: 2000,
   };
 }
 
@@ -105,7 +103,6 @@ Return JSON with exactly these keys:
   "potential_concerns": string[]
 }
 Do not inflate scores. A missing keyword must never appear in matched_keywords.`,
-    maxTokens: 2500,
   };
 }
 
@@ -170,6 +167,5 @@ Propose changes as JSON with exactly these keys:
   "summary": string
 }
 Only propose changes that genuinely improve fit. Leave strong bullets alone.`,
-    maxTokens: 4000,
   };
 }

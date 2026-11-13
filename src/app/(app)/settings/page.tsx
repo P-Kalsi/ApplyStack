@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { createClient, requireUser } from "@/lib/supabase/server";
-import { aiEnabled, configuredModel } from "@/lib/ai/run";
+import { API_KEY_ENV, PROVIDERS, PROVIDER_DEFAULTS, checkLlmBackend, loadLlmSettings } from "@/lib/ai/llm";
 import { sourcesFromEnv } from "@/lib/jobs/registry";
 import type { JobSourceRow } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ProfileForm, SourcesManager } from "./settings-client";
+import { LlmBackendCard } from "./llm-backend";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -18,6 +18,9 @@ export default async function SettingsPage() {
     supabase.from("job_sources").select("*").eq("user_id", user.id).order("created_at"),
   ]);
 
+  const llmSettings = loadLlmSettings();
+  const llmStatus = await checkLlmBackend();
+
   const envSources = sourcesFromEnv({
     GREENHOUSE_BOARDS: process.env.GREENHOUSE_BOARDS,
     LEVER_SITES: process.env.LEVER_SITES,
@@ -27,7 +30,7 @@ export default async function SettingsPage() {
     <div className="max-w-3xl space-y-3">
       <div>
         <h1 className="text-base font-semibold text-ink">Settings</h1>
-        <p className="text-xs text-ink-muted">Profile, job sources, and AI configuration.</p>
+        <p className="text-xs text-ink-muted">Profile, job sources, and AI backend.</p>
       </div>
 
       <Card>
@@ -54,24 +57,17 @@ export default async function SettingsPage() {
       </Card>
 
       <Card>
-        <CardHeader title="AI engine" description="Configured via environment variables — no keys are stored in the database." />
-        <div className="space-y-2 px-4 py-3 text-xs text-ink">
-          <div className="flex items-center gap-2">
-            <span className="text-ink-muted">Status:</span>
-            {aiEnabled() ? (
-              <Badge tone="good">ANTHROPIC_API_KEY configured</Badge>
-            ) : (
-              <Badge tone="warn">mock mode — no API key</Badge>
-            )}
-            <span className="text-ink-muted">Model (ANTHROPIC_MODEL):</span>
-            <Badge tone="accent">{configuredModel()}</Badge>
-          </div>
-          <p className="text-ink-muted">
-            Without a key, analysis/matching/tailoring run on the built-in deterministic engine:
-            useful, truthful, and free — but the model writes better bullets. Either way, every
-            proposed change passes the same truthfulness guard against your Career Vault.
-          </p>
-        </div>
+        <CardHeader
+          title="AI backend"
+          description="Which model does the AI steps. Fast model: job analysis and matching. Smart model: resume tailoring. Every backend goes through the same truthfulness guard."
+        />
+        <LlmBackendCard
+          providers={PROVIDERS}
+          defaults={PROVIDER_DEFAULTS}
+          keyEnv={API_KEY_ENV}
+          settings={llmSettings}
+          status={llmStatus}
+        />
       </Card>
     </div>
   );

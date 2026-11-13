@@ -7,9 +7,10 @@ import { SAMPLE_MASTER_RESUME } from "./fixtures/sample-profile";
 import { JobAnalysisSchema, MatchReportSchema } from "../src/lib/ai/schemas";
 import { makeJob, makeVault } from "./helpers";
 
-// No ANTHROPIC_API_KEY in the test environment -> the engine must fall back
-// to the deterministic mock and still satisfy every schema and guard.
-delete process.env.ANTHROPIC_API_KEY;
+// The offline backend runs the deterministic engine; it must still satisfy
+// every schema and guard.
+process.env.APPLYSTACK_LLM_PROVIDER = "offline";
+process.env.APPLYSTACK_CONFIG = "/nonexistent/applystack.config.json";
 
 test("reorderTrailingList moves prioritized items first without adding/removing", () => {
   const out = reorderTrailingList(
@@ -45,7 +46,7 @@ test("reorderTrailingList returns null when nothing changes", () => {
 
 test("mock job analysis satisfies the schema", async () => {
   const { data, engine } = await runJobAnalysis(makeJob());
-  assert.equal(engine, "mock");
+  assert.equal(engine, "offline");
   assert.ok(JobAnalysisSchema.safeParse(data).success);
   assert.equal(data.seniority, "intern");
   assert.ok(data.cloud_infrastructure_keywords.includes("docker"));
@@ -71,7 +72,7 @@ test("tailoring pipeline produces guarded, applicable changes with provenance", 
   const { data: analysis } = await runJobAnalysis(job);
   const out = await runTailorPipeline(job, analysis, vault, SAMPLE_MASTER_RESUME);
 
-  assert.equal(out.engine, "mock");
+  assert.equal(out.engine, "offline");
   assert.ok(out.guarded.accepted.length > 0, "expected at least one proposed change");
   for (const change of out.guarded.accepted) {
     assert.ok(change.reason.length > 0, "every change carries a reason");

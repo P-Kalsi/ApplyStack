@@ -1,0 +1,6 @@
+{
+  "provider": "claude_cli",
+  "model_fast": "",
+  "model_smart": "",
+  "timeout_seconds": 240
+}

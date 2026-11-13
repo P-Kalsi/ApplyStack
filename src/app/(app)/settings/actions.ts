@@ -2,6 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient, requireUser } from "@/lib/supabase/server";
+import {
+  checkLlmBackend,
+  loadLlmSettings,
+  saveLlmSettings,
+  type LlmSettings,
+  type LlmStatus,
+} from "@/lib/ai/llm";
 
 export interface ActionResult {
   ok: boolean;
@@ -102,5 +109,55 @@ export async function deleteJobSource(id: string): Promise<ActionResult> {
     return { ok: true, message: "Source removed." };
   } catch (err) {
     return fail(err, "Failed to remove source.");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// AI backend (LLM provider toggle)
+// ---------------------------------------------------------------------------
+
+export interface LlmBackendState {
+  ok: boolean;
+  message: string;
+  settings?: LlmSettings;
+  status?: LlmStatus;
+}
+
+/**
+ * Save the backend choice to applystack.config.json and re-run the readiness
+ * check immediately, so a missing CLI login or API key shows up right away.
+ * API keys are never accepted here; they come from env vars only.
+ */
+export async function saveLlmBackend(fd: FormData): Promise<LlmBackendState> {
+  try {
+    await requireUser();
+    const timeout = str(fd, "timeout_seconds");
+    const settings = saveLlmSettings({
+      provider: str(fd, "provider") || "claude_cli",
+      model_fast: str(fd, "model_fast"),
+      model_smart: str(fd, "model_smart"),
+      ...(timeout ? { timeout_seconds: Number(timeout) } : {}),
+    });
+    const status = await checkLlmBackend({ fresh: true });
+    revalidatePath("/", "layout");
+    return {
+      ok: status.ok,
+      message: status.ok ? `Saved. ${status.message}` : `Saved, but the backend isn't ready: ${status.message}`,
+      settings,
+      status,
+    };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Failed to save AI backend." };
+  }
+}
+
+export async function recheckLlmBackend(): Promise<LlmBackendState> {
+  try {
+    await requireUser();
+    const status = await checkLlmBackend({ fresh: true });
+    revalidatePath("/", "layout");
+    return { ok: status.ok, message: status.message, settings: loadLlmSettings(), status };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Check failed." };
   }
 }

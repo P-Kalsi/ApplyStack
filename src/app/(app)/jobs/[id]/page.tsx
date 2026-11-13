@@ -217,7 +217,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           title="AI job analysis"
           description={
             analysisRow
-              ? `Engine: ${analysisRow.engine === "anthropic" ? `Anthropic (${analysisRow.model})` : "deterministic mock"} · updated ${timeAgo(analysisRow.updated_at as string)}`
+              ? `Engine: ${analysisRow.engine === "offline" || analysisRow.engine === "mock" ? "offline (deterministic)" : `${analysisRow.engine} · ${analysisRow.model}`} · updated ${timeAgo(analysisRow.updated_at as string)}`
               : "Structured breakdown of requirements, compared against your vault"
           }
           actions={<AnalyzeButton jobId={job.id} hasAnalysis={Boolean(analysisRow)} />}

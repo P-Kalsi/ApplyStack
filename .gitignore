@@ -18,8 +18,12 @@ next-env.d.ts
 *.pem
 npm-debug.log*
 .env
-.env*.local
+.env.*
+!.env.example
 
 # typescript
 *.tsbuildinfo
 .demo-data.json
+
+# per-user AI backend choice (contains no secrets, but is personal)
+applystack.config.json

@@ -35,7 +35,8 @@ Missing qualifications are always shown as missing — never papered over.
 ## Tech stack
 
 Next.js 15 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres + Auth + RLS) ·
-Anthropic API (model configurable via `ANTHROPIC_MODEL`) · Zod · node:test.
+a switchable AI backend (Claude Code headless, or the Anthropic, OpenAI or Gemini API via the
+Vercel AI SDK) · Zod · node:test.
 
 ## Try it without any setup (demo mode)
 
@@ -44,6 +45,9 @@ npm install
 echo APPLYSTACK_DEMO=1 > .env.local
 npm run dev        # http://localhost:3000
 ```
+
+The AI steps use Claude Code by default (see [AI backend](#ai-backend)). To click around with no AI
+at all, pick **Offline** in Settings → AI backend.
 
 Demo mode swaps Supabase for a local in-memory database (saved to `.demo-data.json`) with one
 user and no login, so you can click through every feature: load your profile, upload your Word
@@ -58,7 +62,7 @@ fresh. Never enable demo mode on a deployed site; it has no authentication.
 npm install
 ```
 
-Requires Node 20+ (Node 22 recommended).
+Requires Node 22+ (the AI SDK needs it).
 
 ### 2. Create a Supabase project
 
@@ -67,6 +71,7 @@ Requires Node 20+ (Node 22 recommended).
    - `supabase/migrations/0001_schema.sql`
    - `supabase/migrations/0002_rls.sql`
    - `supabase/migrations/0003_docx_resumes.sql`
+   - `supabase/migrations/0004_llm_backends.sql`
    - `supabase/seed.sql` (optional but recommended — seeds 14 realistic internships)
 3. (Optional, for local dev convenience) Authentication → Providers → Email → disable
    "Confirm email" so signup works without an SMTP setup.
@@ -83,8 +88,12 @@ cp .env.example .env
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | Supabase anon key |
-| `ANTHROPIC_API_KEY` | no | Enables model-based analysis/tailoring. Without it the app runs fully on the deterministic mock engine. |
-| `ANTHROPIC_MODEL` | no | Model name (default `claude-sonnet-4-5`). Never hardcoded. |
+| `ANTHROPIC_API_KEY` | only for the Anthropic API backend | Your Anthropic Console key |
+| `OPENAI_API_KEY` | only for the OpenAI backend | Your OpenAI key |
+| `GEMINI_API_KEY` | only for the Gemini backend | Your Google AI Studio key |
+| `APPLYSTACK_LLM_PROVIDER` | no | Forces a backend (`claude_cli`, `anthropic`, `openai`, `gemini`, `offline`), overriding the Settings page |
+| `CLAUDE_CLI_PATH` | no | Full path to `claude` if it isn't on `PATH` |
+| `APPLYSTACK_CONFIG` | no | Where the backend settings file lives (default `./applystack.config.json`) |
 | `GREENHOUSE_BOARDS` | no | Comma-separated Greenhouse board tokens to ingest |
 | `LEVER_SITES` | no | Comma-separated Lever site names to ingest |
 
@@ -106,6 +115,64 @@ Sign up, then:
    projects that aren't in it, so choose one with your strongest projects.
 3. **Applications → Import CSV** to bring in an existing spreadsheet tracker.
 
+## AI backend
+
+Every AI call goes through one function, `askLlm(prompt, tier, system)` in `src/lib/ai/llm.ts`.
+Pick the backend in **Settings → AI backend**:
+
+| Backend | Pays with | Default fast / smart model |
+| --- | --- | --- |
+| **Claude Code (default)** | your Claude Pro/Max/Team plan's usage limits | `haiku` / `sonnet` |
+| Anthropic API | your Anthropic Console key | `claude-haiku-5-5` / `claude-sonnet-5-5` |
+| OpenAI API | your OpenAI key | `gpt-6-luna` / `gpt-6.1-sol` |
+| Gemini API | your Gemini key | `gemini-3.1-flash-lite` / `gemini-3.5-flash` |
+| Offline | nothing | deterministic engine, no AI |
+
+- **Fast** model: job analysis and match reports. **Smart** model: resume tailoring.
+- Leave the model boxes blank to use the defaults above (one table, `PROVIDER_DEFAULTS` in
+  `llm.ts`). Model IDs change; if a provider retires one, type the new ID in Settings.
+- The choice is saved to `applystack.config.json` (git-ignored; see
+  `applystack.config.example.json`). That file never holds API keys: keys come only from
+  environment variables.
+- On server start and every time you save the toggle, ApplyStack checks the backend (Claude
+  Code installed and logged in, or the key set) and shows a red banner with the fix if not.
+- Each call has a timeout (90 s fast, 240 s smart, or `timeout_seconds` in the config) and one
+  retry. The server log shows a line per call with provider, model, tier, attempt and duration.
+- Every backend goes through the same Zod validation and truthfulness guard.
+
+### Claude Code (uses your Claude plan, no API key)
+
+```bash
+npm install -g @anthropic-ai/claude-code
+claude          # run once and log in with your Claude account, then exit
+```
+
+ApplyStack runs `claude -p` with JSON output, tools disabled, no MCP servers and no saved
+session, in an empty temp folder. It removes `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` from
+the subprocess environment, so Claude Code uses your plan login rather than billing an API key.
+If `claude` itself is logged in with an API key (`claude auth status`), Settings warns you.
+
+This only works when ApplyStack runs on the same computer where you logged in to `claude`.
+Usage counts against your plan's normal limits, shared with Claude chat and Claude Code.
+
+### Anthropic, OpenAI or Gemini API
+
+Put the key in `.env.local` (or `.env`), restart ApplyStack, then pick the backend in Settings:
+
+```bash
+ANTHROPIC_API_KEY=...   # console.anthropic.com
+OPENAI_API_KEY=...      # platform.openai.com
+GEMINI_API_KEY=...      # aistudio.google.com
+```
+
+`.env`, `.env.*` (except `.env.example`) and `applystack.config.json` are git-ignored.
+
+### Use your own login or key
+
+Each person who runs ApplyStack must use **their own** Claude login or their own API key. Don't
+share a Claude subscription through ApplyStack, and don't deploy the Claude Code backend on a
+server for other people to use; for a shared deployment, use an API backend with your own key.
+
 ## Commands
 
 ```bash
@@ -123,7 +190,7 @@ npm test             # compiles tests with tsc, runs them with node --test (no t
 2. **Select** relevant approved facts deterministically (`matching/relevance.ts`) — the model
    never sees irrelevant vault content.
 3. **Rank** projects/experiences against the job.
-4. **Propose** bullet-level changes (model, or deterministic mock without an API key).
+4. **Propose** bullet-level changes (the smart model, or the deterministic engine on Offline).
 5. **Guard** every change (`ai/guard.ts`): unknown blocks, invented tech, invented numbers → rejected.
 6. **Store** a `resume_version` + one `resume_change` row per proposal with full provenance:
    original text, tailored text, reason, supporting fact ids, targeted keywords, safety flag.
@@ -144,7 +211,7 @@ src/lib/
   jobs/        adapters (greenhouse, lever) → NormalizedJob; normalize, dedupe, registry, skills lexicon
   matching/    deterministic match scores + relevance ranking (the honest baseline)
   resume/      LaTeX block parser/serializer, change application, fact extraction, list reordering
-  ai/          prompts, zod schemas, structured-call runner (1 retry), mock engine, truthfulness guard
+  ai/          llm.ts (backend toggle + askLlm), prompts, zod schemas, structured calls, offline engine, truthfulness guard
   db/          supabase data access (vault snapshot/seeding, job listing/ingestion)
   supabase/    browser/server clients + auth middleware
 ```
@@ -163,7 +230,8 @@ src/lib/
 filtering/relevance ranking, match score calculation, AI schema validation, JSON extraction,
 the truthfulness guard (invented tech/metrics rejection, match-report sanitization), LaTeX
 round-tripping, resume change application (accept/reject/edit/remove), fact extraction, and
-the full mock tailoring pipeline.
+the full offline tailoring pipeline, and the AI backend layer (settings, Claude Code arguments
+and environment, retry, timeout, readiness checks; tested against a fake `claude` script).
 
 ## Word resumes: how it works
 

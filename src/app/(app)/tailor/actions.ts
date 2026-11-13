@@ -5,9 +5,9 @@ import { createClient, requireUser } from "@/lib/supabase/server";
 import { getJob } from "@/lib/db/jobs";
 import { loadVaultSnapshot, vaultIsEmpty } from "@/lib/db/vault";
 import { runJobAnalysis, runMatchReport, runTailorPipeline, resumeCoverage } from "@/lib/ai/engine";
-import { configuredModel } from "@/lib/ai/run";
 import { applyChangesToDocument } from "@/lib/resume/apply-changes";
 import { normalizeFormat } from "@/lib/resume/document";
+import { assertLlmReady } from "@/lib/ai/llm";
 import type { JobAnalysis } from "@/lib/ai/schemas";
 import type { ResumeChangeRow, ResumeChangeStatus } from "@/lib/types";
 
@@ -30,13 +30,15 @@ function fail(err: unknown, fallback: string): ActionResult {
  * ONE-CLICK TAILORING.
  * 1. Analyze the job description (stored per user+job, reused when fresh).
  * 2-3. Deterministically select relevant vault facts and rank content.
- * 4-6. Ask the engine (model or mock) for bullet-level changes.
+ * 4-6. Ask the configured backend (or the offline engine) for bullet-level changes.
  *      Every change passes the truthfulness guard.
  * 7. Store a resume version + full change provenance for review.
  */
 export async function startTailoring(jobId: string): Promise<TailorStartResult> {
   try {
     const user = await requireUser();
+    // Fail fast with setup instructions instead of failing mid-tailoring.
+    await assertLlmReady();
     const supabase = await createClient();
 
     const [job, vault] = await Promise.all([
@@ -73,11 +75,9 @@ export async function startTailoring(jobId: string): Promise<TailorStartResult> 
       .maybeSingle();
 
     let analysis = existingAnalysis?.analysis as JobAnalysis | undefined;
-    let engineUsed = "stored";
     if (!analysis) {
       const res = await runJobAnalysis(job);
       analysis = res.data;
-      engineUsed = res.engine;
       const { data: matchReport } = await runMatchReport(job, analysis, vault);
       await supabase.from("job_analyses").upsert(
         {
@@ -86,7 +86,7 @@ export async function startTailoring(jobId: string): Promise<TailorStartResult> 
           analysis,
           match_report: matchReport,
           engine: res.engine,
-          model: res.engine === "anthropic" ? configuredModel() : "deterministic-mock",
+          model: res.model ?? "deterministic",
         },
         { onConflict: "user_id,job_id" }
       );
@@ -167,7 +167,6 @@ export async function startTailoring(jobId: string): Promise<TailorStartResult> 
 
     revalidatePath("/tailor");
     revalidatePath("/applications");
-    void engineUsed;
     return { ok: true, message: "Tailored draft created.", versionId: version.id };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "Tailoring failed." };

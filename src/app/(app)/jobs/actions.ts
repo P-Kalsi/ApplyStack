@@ -5,7 +5,7 @@ import { createClient, requireUser } from "@/lib/supabase/server";
 import { getJob } from "@/lib/db/jobs";
 import { loadVaultSnapshot } from "@/lib/db/vault";
 import { runJobAnalysis, runMatchReport } from "@/lib/ai/engine";
-import { configuredModel } from "@/lib/ai/run";
+import { assertLlmReady } from "@/lib/ai/llm";
 
 export interface AnalyzeResult {
   ok: boolean;
@@ -19,12 +19,13 @@ export interface AnalyzeResult {
 export async function analyzeJob(jobId: string): Promise<AnalyzeResult> {
   try {
     const user = await requireUser();
+    await assertLlmReady(); // clear setup message before any work starts
     const supabase = await createClient();
     const job = await getJob(supabase, jobId);
     if (!job) return { ok: false, message: "Job not found." };
 
     const vault = await loadVaultSnapshot(supabase, user.id);
-    const { data: analysis, engine } = await runJobAnalysis(job);
+    const { data: analysis, engine, model } = await runJobAnalysis(job);
     const { data: matchReport } = await runMatchReport(job, analysis, vault);
 
     const { error } = await supabase.from("job_analyses").upsert(
@@ -34,7 +35,7 @@ export async function analyzeJob(jobId: string): Promise<AnalyzeResult> {
         analysis,
         match_report: matchReport,
         engine,
-        model: engine === "anthropic" ? configuredModel() : "deterministic-mock",
+        model: model ?? "deterministic",
       },
       { onConflict: "user_id,job_id" }
     );
@@ -44,9 +45,9 @@ export async function analyzeJob(jobId: string): Promise<AnalyzeResult> {
     return {
       ok: true,
       message:
-        engine === "anthropic"
-          ? "Analysis complete."
-          : "Analysis complete (deterministic engine — set ANTHROPIC_API_KEY for model-based analysis).",
+        engine === "offline"
+          ? "Analysis complete (offline engine; pick an AI backend in Settings for model-based analysis)."
+          : `Analysis complete (${engine} · ${model}).`,
     };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "Analysis failed." };

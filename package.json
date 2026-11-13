@@ -4,7 +4,7 @@
   "private": true,
   "description": "Personal internship discovery and truthful AI resume tailoring.",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "next dev",
@@ -15,9 +15,12 @@
     "test": "tsc -p tsconfig.test.json && node --test \".test-build/tests/*.test.js\""
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@ai-sdk/anthropic": "^4.0.103",
+    "@ai-sdk/google": "^4.0.119",
+    "@ai-sdk/openai": "^4.0.116",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
+    "ai": "^7.0.171",
     "lucide-react": "^0.474.0",
     "next": "15.5.29",
     "react": "^19.1.0",
