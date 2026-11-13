@@ -15,6 +15,7 @@ import { AnalyzeButton } from "./analyze-button";
 import { TailorButton } from "./tailor-button";
 import { DescriptionPanel } from "./description-panel";
 import { canFetchDescription } from "@/lib/jobs/posting";
+import { sourceBadge } from "@/lib/jobs/sources/badges";
 
 export const metadata: Metadata = { title: "Job details" };
 
@@ -80,9 +81,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               </>
             ) : null}
             <span aria-hidden>·</span>
-            <Badge tone="outline" className="uppercase">
-              {job.source}
-            </Badge>
+            <Badge tone="accent">{sourceBadge(job.source)}</Badge>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -118,7 +117,17 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               ))}
             </div>
           ) : (
-            <DescriptionPanel jobId={job.id} canFetch={canFetchDescription(job.url)} url={job.url} />
+            <>
+              {job.snippet ? (
+                <div className="border-b border-line px-4 py-3 text-sm text-ink">
+                  <p className="mb-1 text-2xs font-medium uppercase tracking-wide text-ink-faint">
+                    Preview from {sourceBadge(job.source)}
+                  </p>
+                  <p className="whitespace-pre-line text-ink-muted">{job.snippet}</p>
+                </div>
+              ) : null}
+              <DescriptionPanel jobId={job.id} canFetch={canFetchDescription(job.url)} url={job.url} />
+            </>
           )}
         </Card>
 

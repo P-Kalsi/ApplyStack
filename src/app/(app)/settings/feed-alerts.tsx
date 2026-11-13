@@ -78,8 +78,9 @@ export function FeedAlertsCard({ regions, categories, termOptions, notListed, se
         </label>
         <p className="text-2xs text-ink-muted">
           The community-kept list behind github.com/SimplifyJobs. Covers most companies (Workday ones included).
-          Discover pulls it when you open it (at most every 30 minutes) or when you click Refresh sources.
-          {settings.last_ingest_at ? ` Last pulled ${new Date(settings.last_ingest_at).toLocaleString()}.` : ""}
+          It&apos;s one file, so ApplyStack downloads it at most every 30 minutes and pages through it locally;
+          only the jobs on the page you&apos;re viewing are saved. These filters decide what the feed contains;
+          Discover&apos;s location box narrows it further.
         </p>
 
         <div className="space-y-1">

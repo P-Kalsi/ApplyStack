@@ -9,6 +9,7 @@ import { Badge, ScoreBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { displaySkill, timeAgo } from "@/lib/utils";
+import { sourceBadge } from "@/lib/jobs/sources/badges";
 import { toggleSaveJob } from "@/app/(app)/discover/actions";
 import { startTailoring } from "@/app/(app)/tailor/actions";
 
@@ -84,10 +85,14 @@ export function JobCard({
           </>
         ) : null}
         <span aria-hidden>·</span>
-        <Badge tone="outline" className="uppercase">
-          {job.source}
+        <Badge tone="accent" title={`Found via ${sourceBadge(job.source)}`}>
+          {sourceBadge(job.source)}
         </Badge>
       </div>
+
+      {!job.description_text && job.snippet ? (
+        <p className="line-clamp-2 text-2xs leading-4 text-ink-muted">{job.snippet}</p>
+      ) : null}
 
       <div className="flex flex-wrap gap-1">
         {match.matchedSkills.slice(0, 5).map((s) => (

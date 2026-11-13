@@ -1,5 +1,5 @@
 -- ApplyStack: full database setup. Paste this whole file into Supabase → SQL Editor → Run.
--- Generated from migrations 0001-0006 (same content, in order). Run it ONCE, on a new, empty project.
+-- Generated from migrations 0001-0007 (same content, in order). Run it ONCE, on a new, empty project.
 -- Sample jobs are NOT included; they live in seed.sql and are fictional, so skip them for real use.
 
 
@@ -455,4 +455,24 @@ alter table public.jobs
   add column if not exists is_open boolean not null default true;
 
 create index if not exists jobs_open_posted_idx on public.jobs (is_open, posted_at desc nulls last);
+
+
+-- ===== migrations/0007_pluggable_sources.sql =====
+
+-- Pluggable job sources (Adzuna now; Job Bank Canada, JSearch later) and
+-- description previews.
+--   jobs.source   any short lowercase id instead of a fixed list
+--   jobs.snippet  preview text from sources that don't give the full
+--                 description (Adzuna); the full one is fetched or pasted later
+
+alter table public.jobs
+  drop constraint if exists jobs_source_check;
+alter table public.jobs
+  add constraint jobs_source_check check (source ~ '^[a-z][a-z0-9_]{1,30}$');
+
+alter table public.jobs
+  add column if not exists snippet text;
+
+-- Fast lookups when Discover saves the jobs on the page you're viewing.
+create index if not exists jobs_source_id_idx on public.jobs (source, source_id);
 

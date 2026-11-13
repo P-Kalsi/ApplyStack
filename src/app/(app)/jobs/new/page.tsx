@@ -17,7 +17,7 @@ export default async function NewJobPage() {
       <Card>
         <CardHeader
           title="Add a job"
-          description="For postings from any site. Paste the link and click Fill from link (Greenhouse, Lever, Ashby and Workday links fill in automatically), or type the details and paste the description."
+          description="For postings from any site. Greenhouse, Lever, Ashby and Workday links fill in automatically with Fill from link. Indeed, LinkedIn and other sites don't offer a public way for apps to read their postings, so paste the link, type the company and title, and copy the description from the posting."
         />
         <NewJobForm />
       </Card>

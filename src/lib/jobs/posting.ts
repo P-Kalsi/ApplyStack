@@ -109,7 +109,9 @@ export async function fetchPosting(rawUrl: string, fetchImpl: typeof fetch = fet
   const ref = parsePostingUrl(rawUrl);
   if (!ref) {
     throw new Error(
-      "ApplyStack can't read descriptions from this site automatically. Paste the description instead."
+      /indeed\.|linkedin\./i.test(rawUrl)
+        ? "Indeed and LinkedIn don't let apps read their postings (no public API, and scraping breaks their terms). Copy the description from the posting and paste it below."
+        : "ApplyStack can't read descriptions from this site automatically. Paste the description instead."
     );
   }
 

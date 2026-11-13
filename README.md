@@ -67,11 +67,11 @@ Requires Node 22+ (the AI SDK needs it).
 ### 2. Create a Supabase project
 
 1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
-2. In the SQL editor, paste and run `supabase/setup_all.sql` once. It is migrations 0001–0006
+2. In the SQL editor, paste and run `supabase/setup_all.sql` once. It is migrations 0001–0007
    in order (schema, row-level security, Word resumes, AI backends, table grants, internship
-   feed), so it works whether or not "Automatically expose new tables" is on.
+   feed, pluggable sources), so it works whether or not "Automatically expose new tables" is on.
    Already set up with an older `setup_all.sql`? Run only the migrations you haven't run yet
-   (e.g. `0006_simplify_feed.sql`).
+   (e.g. `0006_simplify_feed.sql`, then `0007_pluggable_sources.sql`).
    `supabase/seed.sql` adds 14 sample internships from fictional companies; skip it for real use.
 3. (Optional, for local dev convenience) Authentication → Providers → Email → disable
    "Confirm email" so signup works without an SMTP setup.
@@ -115,18 +115,45 @@ Sign up, then:
    projects that aren't in it, so choose one with your strongest projects.
 3. **Applications → Import CSV** to bring in an existing spreadsheet tracker.
 
-## Internship feed, job descriptions and Discord alerts
+## Discover: sources, paging and filters
 
-**Feed.** Discover pulls Simplify's public internship list (the data behind
-github.com/SimplifyJobs, one JSON file on GitHub), filtered in **Settings → Internship feed &
-alerts** by location (Canada / United States / Remote), term and kind of role. It refreshes when
-you open Discover (at most every 30 minutes) or click **Refresh sources**. Listings that leave the
-list are marked closed and drop off Discover; your applications keep them.
+Discover reads jobs live from pluggable sources (`src/lib/jobs/sources`) and shows one page at a
+time: **Show 10 / 25 / 50 per page**, Prev / page numbers / Next, and "Showing 1–25 of N jobs".
 
-**Descriptions.** Feed listings arrive without a description, and tailoring needs one:
+| Source | What it is | Paging |
+| --- | --- | --- |
+| Simplify internships | Simplify's public internship list (one JSON file on GitHub), filtered in Settings → Internship feed & alerts | downloaded at most every 30 min, paged locally |
+| Adzuna | Adzuna's job search API, `country=ca` by default; needs `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` (free at developer.adzuna.com) | one API request per page you open |
+| Company boards | Greenhouse / Lever boards from Settings → Company boards | each board cached 30 min, paged locally |
+| Added by you | Jobs from **Add job** (any site, including Indeed and LinkedIn) | from your database |
 
-- Greenhouse, Lever and Ashby links: fetched automatically from each company's public job API,
-  up to 40 per refresh, and on demand with **Get description** on the job page.
+- **Filters:** search (Enter), **Location** (default "Vancouver, BC"; empty = anywhere), radius
+  (Adzuna uses it; the other sources match the city and its metro area, e.g. Burnaby and Richmond
+  for Vancouver), **Local + remote / Local only / Remote only**, source, sort, date posted,
+  internships/co-ops and categories. Every card shows a badge for the source it came from.
+- **Sort:** newest, or most relevant to your search words (Adzuna ranks with its own relevance;
+  the other sources rank title matches above company and description matches).
+- **Only the current page does any work.** "All sources" asks each source for just enough jobs to
+  fill the page you're on, merges them by date, and moves on one page at a time. Results are
+  cached on the server (Adzuna pages 15 min, lists 30 min) and in the browser for 3 minutes, so
+  going back doesn't refetch; **Refresh** clears the cache. Only the jobs on the page you're
+  viewing are saved to your database, descriptions are fetched only for them, and no AI call ever
+  runs from Discover (match scores are deterministic; analysis and tailoring are buttons).
+- **Adzuna limits:** free keys have a daily request limit, which the per-page fetching and caching
+  are designed around. Adzuna only returns a short preview of each description; the card and job
+  page show it, and you add the full description with Get description or Paste.
+- **Indeed and LinkedIn** aren't sources: neither offers a public API for this, and ApplyStack
+  never scrapes. Use **Add job** with the link and the copied description.
+- **Adding a source** (Job Bank Canada, JSearch, …): write one file exporting a `JobSourcePlugin`
+  (`status()` and `fetchWindow(query, offset, limit)`), add it to `ALL_SOURCES` in
+  `src/lib/jobs/sources/index.ts`, and add its badge name in `badges.ts`.
+
+## Job descriptions and Discord alerts
+
+**Descriptions.** Simplify and Adzuna listings arrive without a full description, and tailoring needs one:
+
+- Greenhouse, Lever and Ashby links: fetched automatically from each company's public job API
+  for the jobs on the Discover page you're viewing, and on demand with **Get description**.
 - Workday links: **Get description** reads that one posting from the careers site's own job data,
   only when you click it.
 - Anything else: **Paste it** on the job page.

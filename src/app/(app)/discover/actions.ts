@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient, requireUser } from "@/lib/supabase/server";
-import { ingestJobs, ingestSimplify, loadSources, type IngestSummary } from "@/lib/db/jobs";
-import { feedFilter, loadFeedSettings, saveFeedSettings } from "@/lib/jobs/feed-settings";
+import { describeJobs } from "@/lib/db/jobs";
+import { clearSourceCache } from "@/lib/jobs/sources/cache";
 
 export interface ActionResult {
   ok: boolean;
@@ -69,60 +69,26 @@ export async function toggleSaveJob(jobId: string): Promise<ActionResult> {
   }
 }
 
-export async function refreshJobs(): Promise<ActionResult & { added?: number }> {
+/** Forget cached source results so the current page is fetched fresh. */
+export async function refreshSources(): Promise<ActionResult> {
   try {
-    const user = await requireUser();
-    const supabase = await createClient();
-    const feed = loadFeedSettings();
-    const sources = await loadSources(supabase, user.id);
-    if (sources.length === 0 && !feed.simplify.enabled) {
-      return {
-        ok: true,
-        message: "No sources are on. Turn on the internship feed or add company boards in Settings.",
-      };
-    }
-
-    const parts: string[] = [];
-    const problems: string[] = [];
-    let added = 0;
-
-    if (feed.simplify.enabled) {
-      try {
-        const s = await ingestSimplify(supabase, feedFilter(feed));
-        added += s.added;
-        saveFeedSettings({ last_ingest_at: new Date().toISOString() });
-        parts.push(
-          `Internship feed: ${s.matching} matching, ${s.added} new` +
-            (s.closed ? `, ${s.closed} closed` : "") +
-            (s.described ? `, ${s.described} descriptions fetched` : "")
-        );
-        problems.push(...s.errors);
-      } catch (err) {
-        problems.push(`Internship feed: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    }
-
-    if (sources.length > 0) {
-      const summary: IngestSummary = await ingestJobs(supabase, sources);
-      parts.push(`Company boards: ${summary.fetched} postings from ${summary.sources} source(s)`);
-      problems.push(...summary.errors);
-    }
-
+    await requireUser();
+    const n = clearSourceCache();
     revalidatePath("/discover");
-    const note = problems.length ? ` Problems: ${problems.slice(0, 3).join(" · ")}` : "";
-    return { ok: problems.length === 0 || parts.length > 0, message: `${parts.join(". ")}.${note}`, added };
+    return { ok: true, message: n ? "Refreshed. Fetching the latest postings." : "Fetching the latest postings." };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "Refresh failed." };
   }
 }
 
-/** Called when Discover opens: refresh the internship feed if it's older than 30 minutes. */
-export async function refreshJobsIfStale(): Promise<ActionResult & { refreshed: boolean; added?: number }> {
-  const feed = loadFeedSettings();
-  const last = feed.last_ingest_at ? Date.parse(feed.last_ingest_at) : 0;
-  if (!feed.simplify.enabled || Date.now() - last < 30 * 60_000) {
-    return { ok: true, message: "", refreshed: false };
+/** Fetch descriptions for the jobs on the page being viewed (never for other pages). */
+export async function describePage(jobIds: string[]): Promise<{ ok: boolean; described: number }> {
+  try {
+    await requireUser();
+    const supabase = await createClient();
+    const described = await describeJobs(supabase, jobIds.slice(0, 50));
+    return { ok: true, described };
+  } catch {
+    return { ok: false, described: 0 };
   }
-  const res = await refreshJobs();
-  return { ...res, refreshed: true };
 }

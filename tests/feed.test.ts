@@ -16,9 +16,6 @@ import {
 } from "../src/lib/jobs/adapters/simplify";
 import { canBulkFetch, canFetchDescription, fetchPosting, parsePostingUrl } from "../src/lib/jobs/posting";
 import { descriptionPatch } from "../src/lib/jobs/normalize";
-import { createDemoClient } from "../src/lib/demo/client";
-import { ingestSimplify, listJobs } from "../src/lib/db/jobs";
-import type { JobRow } from "../src/lib/types";
 import { defaultFeedSettings, loadFeedSettings, saveFeedSettings } from "../src/lib/jobs/feed-settings";
 import { loadLlmSettings, saveLlmSettings } from "../src/lib/ai/llm";
 
@@ -257,59 +254,6 @@ test("descriptionPatch derives skills and keeps categories", () => {
   assert.ok(patch.categories.includes("software-engineering") && patch.categories.includes("backend"));
   assert.equal(patch.work_mode, "remote");
   assert.ok(!("employment_type" in patch), "known type is kept");
-});
-
-// ---------------------------------------------------------------------------
-// Ingest into the jobs table (demo database, isolated in a temp folder)
-// ---------------------------------------------------------------------------
-
-test("ingestSimplify adds, keeps descriptions, closes and fetches descriptions", async () => {
-  const work = mkdtempSync(join(tmpdir(), "applystack-ingest-"));
-  process.env.APPLYSTACK_DEMO_FILE = join(work, ".demo-data.json");
-  {
-    const db = createDemoClient() as never;
-
-    const gh = listing({ id: "gh", title: "Backend Intern", url: "https://boards.greenhouse.io/jobber/jobs/42" });
-    const wd = listing({
-      id: "wd",
-      company_name: "Ciena",
-      title: "Software Co-op",
-      url: "https://ciena.wd5.myworkdayjobs.com/Careers/job/Ottawa/Software-Co-op_R1",
-    });
-    const calls: string[] = [];
-    const f = fakeFetch(
-      {
-        "https://boards-api.greenhouse.io/v1/boards/jobber/jobs/42": {
-          id: 42,
-          title: "Backend Intern",
-          content: "&lt;p&gt;Go, Kubernetes and PostgreSQL services.&lt;/p&gt;",
-        },
-      },
-      calls
-    );
-
-    const first = await ingestSimplify(db, CANADA, { listings: [gh, wd], fetchImpl: f });
-    assert.equal(first.matching, 2);
-    assert.equal(first.added, 2);
-    assert.equal(first.described, 1, "Greenhouse described in bulk; Workday left for on-demand");
-    assert.ok(calls.every((c) => !c.includes("myworkdayjobs")), "never bulk-fetches Workday");
-
-    const feedJobs = async () => (await listJobs(db, {})).filter((j: JobRow) => j.source === "simplify");
-    let jobs = await feedJobs();
-    const ghRow = jobs.find((j) => j.source_id === "gh")!;
-    assert.match(ghRow.description_text || "", /Kubernetes/);
-    assert.ok(ghRow.skills.includes("kubernetes"));
-
-    // Second refresh: the description survives; the Workday listing closed.
-    const second = await ingestSimplify(db, CANADA, { listings: [gh, { ...wd, active: false }], fetchImpl: f });
-    assert.equal(second.added, 0);
-    assert.equal(second.closed, 1);
-    jobs = await feedJobs();
-    assert.deepEqual(jobs.map((j) => j.source_id), ["gh"]);
-    assert.match(jobs[0].description_text || "", /Kubernetes/);
-    const raw = JSON.parse(readFileSync(join(work, ".demo-data.json"), "utf8"));
-    assert.equal(raw.jobs.find((j: { source_id: string }) => j.source_id === "wd").is_open, false);
-  }
 });
 
 // ---------------------------------------------------------------------------

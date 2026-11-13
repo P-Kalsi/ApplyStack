@@ -13,6 +13,7 @@ import { z } from "zod";
 import { FEED_CATEGORIES, FEED_REGIONS } from "@/lib/jobs/adapters/simplify";
 import { loadFeedSettings, saveFeedSettings } from "@/lib/jobs/feed-settings";
 import { resetAlertBaseline, runAlertCheck, sendTestAlert } from "@/lib/alerts/discord";
+import { clearSourceCache } from "@/lib/jobs/sources/cache";
 
 export interface ActionResult {
   ok: boolean;
@@ -76,7 +77,7 @@ export async function addJobSource(fd: FormData): Promise<ActionResult> {
       throw new Error(error.message);
     }
     revalidatePath("/settings");
-    return { ok: true, message: `Added ${kind} source "${token}". Use "Refresh sources" on Discover to ingest.` };
+    return { ok: true, message: `Added ${kind} source "${token}". Pick "Company boards" (or All sources) on Discover to see its jobs.` };
   } catch (err) {
     return fail(err, "Failed to add source.");
   }
@@ -190,18 +191,17 @@ export async function saveFeedAndAlerts(input: z.input<typeof FeedFormSchema>): 
     saveFeedSettings({
       simplify: { enabled: d.enabled, regions: d.regions, terms: d.terms, categories: d.categories },
       alerts: { enabled: d.alerts_enabled, interval_minutes: d.interval_minutes },
-      // Pull again on the next Discover visit so the board matches the new filters.
-      ...(filterChanged ? { last_ingest_at: null } : {}),
     });
     // New filters: start alerts from a fresh baseline instead of flooding the
     // channel with every listing that newly matches.
     if (filterChanged) resetAlertBaseline();
+    clearSourceCache("simplify:");
     revalidatePath("/settings");
     revalidatePath("/discover");
     return {
       ok: true,
       message: filterChanged
-        ? "Saved. Discover will pull the feed with your new filters next time you open it."
+        ? "Saved. Discover now uses your new filters."
         : "Saved.",
     };
   } catch (err) {

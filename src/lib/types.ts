@@ -3,7 +3,8 @@
 
 export type WorkMode = "remote" | "hybrid" | "onsite" | "unknown";
 export type EmploymentType = "internship" | "newgrad" | "fulltime" | "other";
-export type JobSource = "greenhouse" | "lever" | "seed" | "manual" | "simplify";
+// Built-in sources; plug-in sources (see src/lib/jobs/sources) may add more ids.
+export type JobSource = "greenhouse" | "lever" | "seed" | "manual" | "simplify" | "adzuna" | (string & {});
 
 export type JobCategory =
   | "software-engineering"
@@ -48,6 +49,8 @@ export interface JobRow {
   dedupe_key: string;
   /** false once the posting disappears from its feed (Simplify). */
   is_open?: boolean;
+  /** Short preview from sources that don't give the full description (Adzuna). */
+  snippet?: string | null;
   created_at: string;
   updated_at: string;
 }
