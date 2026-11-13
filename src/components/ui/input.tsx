@@ -4,25 +4,35 @@ import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes, type
 import { cn } from "@/lib/utils";
 
 const fieldClasses =
-  "w-full rounded-md border border-line bg-surface-raised px-2.5 text-sm text-ink placeholder:text-ink-faint " +
+  "rounded-md border border-line bg-surface-raised px-2.5 text-sm text-ink placeholder:text-ink-faint " +
   "focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/60 disabled:opacity-50";
+
+/** Full width unless the caller sets its own width (w-40, min-w-..., etc.). */
+function widthFor(className?: string): string {
+  return /(^|\s)(w-|min-w-|flex-1)/.test(className ?? "") ? "" : "w-full";
+}
+
+/** Default height unless the caller sets one (h-7 for compact table cells). */
+function heightFor(className?: string): string {
+  return /(^|\s)h-/.test(className ?? "") ? "" : "h-9";
+}
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className, ...props }, ref) {
-    return <input ref={ref} className={cn(fieldClasses, "h-9", className)} {...props} />;
+    return <input ref={ref} className={cn(fieldClasses, widthFor(className), heightFor(className), className)} {...props} />;
   }
 );
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
   function Textarea({ className, ...props }, ref) {
-    return <textarea ref={ref} className={cn(fieldClasses, "py-2 min-h-[80px]", className)} {...props} />;
+    return <textarea ref={ref} className={cn(fieldClasses, widthFor(className), "py-2 min-h-[80px]", className)} {...props} />;
   }
 );
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
   function Select({ className, children, ...props }, ref) {
     return (
-      <select ref={ref} className={cn(fieldClasses, "h-9 pr-8", className)} {...props}>
+      <select ref={ref} className={cn(fieldClasses, widthFor(className), heightFor(className), "pr-8", className)} {...props}>
         {children}
       </select>
     );

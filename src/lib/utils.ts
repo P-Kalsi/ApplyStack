@@ -56,6 +56,16 @@ export function displaySkill(s: string): string {
     "gemini api": "Gemini API",
     "openai api": "OpenAI API",
     "anthropic api": "Anthropic API",
+    pytorch: "PyTorch",
+    tensorflow: "TensorFlow",
+    numpy: "NumPy",
+    websockets: "WebSockets",
+    bigquery: "BigQuery",
+    dbt: "dbt",
+    pytest: "pytest",
+    vite: "Vite",
+    "c++": "C++",
+    "c#": "C#",
   };
   if (special[s]) return special[s];
   return s

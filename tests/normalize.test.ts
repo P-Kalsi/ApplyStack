@@ -119,3 +119,12 @@ test("lever adapter maps postings into the internal model", () => {
   assert.ok(job.skills.includes("airflow"));
   assert.match(job.description_text || "", /- Pandas/);
 });
+
+import { extractSkills } from "../src/lib/jobs/skills";
+
+test("single-letter languages need a capital letter", () => {
+  assert.ok(!extractSkills("Pearson r was 0.999 on every run").includes("r"));
+  assert.ok(extractSkills("Statistical model in R and Jupyter").includes("r"));
+  assert.ok(extractSkills("Languages: C/C++, Python").includes("c"));
+  assert.ok(!extractSkills("a, b, c and d").includes("c"));
+});

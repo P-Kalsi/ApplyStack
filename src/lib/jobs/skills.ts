@@ -125,9 +125,17 @@ function makeMatcher(alias: string): RegExp {
   return new RegExp(`(?<![a-z0-9+#])${body}(?![a-z0-9+#])`, "i");
 }
 
-const MATCHERS: { alias: string; canonical: string; re: RegExp }[] = Array.from(
+const MATCHERS: { alias: string; canonical: string; re: RegExp; caseSensitive: boolean }[] = Array.from(
   CANONICAL_BY_ALIAS.entries()
-).map(([alias, canonical]) => ({ alias, canonical, re: makeMatcher(alias) }));
+).map(([alias, canonical]) => {
+  // Single-letter languages (C, R) only count when written as a capital
+  // letter, so "Pearson r" or "a c b" never become programming languages.
+  if (alias.length === 1) {
+    const up = escapeRegex(alias.toUpperCase());
+    return { alias, canonical, re: new RegExp(`(?<![A-Za-z0-9+#])${up}(?![A-Za-z0-9+#])`), caseSensitive: true };
+  }
+  return { alias, canonical, re: makeMatcher(alias), caseSensitive: false };
+});
 
 /** Canonicalize one skill token, e.g. "Postgres" -> "postgresql". */
 export function canonicalSkill(raw: string): string {
@@ -137,10 +145,11 @@ export function canonicalSkill(raw: string): string {
 
 /** Extract canonical skills mentioned anywhere in a blob of text. */
 export function extractSkills(text: string): string[] {
-  const lower = (text || "").toLowerCase();
+  const raw = text || "";
+  const lower = raw.toLowerCase();
   const found = new Set<string>();
-  for (const { re, canonical } of MATCHERS) {
-    if (re.test(lower)) found.add(canonical);
+  for (const { re, canonical, caseSensitive } of MATCHERS) {
+    if (re.test(caseSensitive ? raw : lower)) found.add(canonical);
   }
   return Array.from(found).sort();
 }

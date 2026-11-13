@@ -37,6 +37,19 @@ Missing qualifications are always shown as missing — never papered over.
 Next.js 15 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres + Auth + RLS) ·
 Anthropic API (model configurable via `ANTHROPIC_MODEL`) · Zod · node:test.
 
+## Try it without any setup (demo mode)
+
+```bash
+npm install
+echo APPLYSTACK_DEMO=1 > .env.local
+npm run dev        # http://localhost:3000
+```
+
+Demo mode swaps Supabase for a local in-memory database (saved to `.demo-data.json`) with one
+user and no login, so you can click through every feature: load your profile, upload your Word
+resume, tailor, review, download, and import applications. Delete `.demo-data.json` to start
+fresh. Never enable demo mode on a deployed site; it has no authentication.
+
 ## Setup
 
 ### 1. Install

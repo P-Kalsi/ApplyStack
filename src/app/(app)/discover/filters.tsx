@@ -94,7 +94,7 @@ export function DiscoverFilters() {
               else p.delete("days");
             })
           }
-          className="w-40"
+          className="w-48"
           aria-label="Date posted"
         >
           <option value="">Any date posted</option>

@@ -3,9 +3,21 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 import { NextResponse, type NextRequest } from "next/server";
 
+const DEMO = process.env.APPLYSTACK_DEMO === "1";
+
 const PUBLIC_PATHS = ["/login", "/signup"];
 
 export async function updateSession(request: NextRequest) {
+  if (DEMO) {
+    // Demo mode: single local user, no auth.
+    if (PUBLIC_PATHS.some((p) => request.nextUrl.pathname.startsWith(p))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/discover";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next({ request });
+  }
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

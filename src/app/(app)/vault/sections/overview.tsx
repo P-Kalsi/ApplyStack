@@ -87,7 +87,7 @@ export function VaultOverview({
       {pending > 0 ? (
         <Card className="flex items-center justify-between gap-3 border-warn/40 p-3">
           <p className="text-xs text-ink">
-            <span className="font-medium">{pending} extracted fact(s) awaiting review.</span>{" "}
+            <span className="font-medium">{pending} fact(s) awaiting your review.</span>{" "}
             <span className="text-ink-muted">
               Pending facts are never used for matching or tailoring until you approve them.
             </span>
