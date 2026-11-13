@@ -8,6 +8,9 @@ import { buildNormalizedJob, descriptionPatch } from "@/lib/jobs/normalize";
 import { fetchPosting, type FetchedPosting } from "@/lib/jobs/posting";
 import { canonicalJobUrl, MAX_CAPTURE_CHARS, siteOf, type ExtractedJob } from "@/lib/jobs/page-import";
 import { extractJobFromPage } from "@/lib/ai/page-extract";
+import { canonicalSkill, extractSkills } from "@/lib/jobs/skills";
+import { displaySkill } from "@/lib/utils";
+import type { MatchReport } from "@/lib/ai/schemas";
 import { loadVaultSnapshot } from "@/lib/db/vault";
 import { runJobAnalysis, runMatchReport } from "@/lib/ai/engine";
 import { assertLlmReady } from "@/lib/ai/llm";
@@ -214,5 +217,111 @@ export async function importJobFromPage(
   } catch (err) {
     if (err instanceof z.ZodError) return { ok: false, message: err.issues[0]?.message ?? "Couldn't read that." };
     return { ok: false, message: err instanceof Error ? err.message : "Couldn't read that page." };
+  }
+}
+
+const SKILL_GROUPS = [
+  "languages", "frameworks", "libraries", "databases", "cloud",
+  "infrastructure", "developer_tools", "operating_systems", "other",
+] as const;
+
+const ConfirmSchema = z.object({
+  jobId: z.string().uuid(),
+  keyword: z.string().trim().min(1).max(120),
+  factText: z
+    .string()
+    .trim()
+    .min(15, "Describe what you did in a sentence (where, what you built or did).")
+    .max(600, "Keep it to one or two sentences."),
+  experienceId: z.string().uuid().nullable().optional(),
+  projectId: z.string().uuid().nullable().optional(),
+  /** Also add the keyword to this skills group. */
+  skillGroup: z.enum(SKILL_GROUPS).nullable().optional(),
+});
+
+/**
+ * "I've done this": save your own description of a requirement you meet as an
+ * approved Career Vault fact (optionally as a skill too), and mark that keyword
+ * as verified in this job's analysis. Your words are saved as-is; nothing is
+ * generated. Tailoring may now use it.
+ */
+export async function confirmKeyword(input: z.input<typeof ConfirmSchema>): Promise<AnalyzeResult> {
+  try {
+    const user = await requireUser();
+    const d = ConfirmSchema.parse(input);
+    const supabase = await createClient();
+
+    const keywordSkill = canonicalSkill(d.keyword);
+    const keywords = Array.from(
+      new Set([...extractSkills(`${d.keyword}\n${d.factText}`), d.keyword.toLowerCase()])
+    ).slice(0, 20);
+    const { data: fact, error: factErr } = await supabase
+      .from("career_facts")
+      .insert({
+        user_id: user.id,
+        fact_text: d.factText,
+        category: "general",
+        experience_id: d.experienceId || null,
+        project_id: d.projectId || null,
+        keywords,
+        source: "manual",
+        status: "approved",
+      })
+      .select("id")
+      .single();
+    if (factErr) throw new Error(factErr.message);
+
+    let skillNote = "";
+    if (d.skillGroup) {
+      const { data: group } = await supabase
+        .from("career_skills")
+        .select("items")
+        .eq("user_id", user.id)
+        .eq("category", d.skillGroup)
+        .maybeSingle();
+      const items = ((group?.items as string[] | undefined) ?? []).slice();
+      const label = displaySkill(d.keyword.trim());
+      if (!items.some((i) => canonicalSkill(i) === keywordSkill || i.toLowerCase() === label.toLowerCase())) {
+        items.push(label);
+        const { error } = await supabase
+          .from("career_skills")
+          .upsert({ user_id: user.id, category: d.skillGroup, items }, { onConflict: "user_id,category" });
+        if (error) throw new Error(error.message);
+        skillNote = ` and added "${label}" to your skills`;
+      }
+    }
+
+    // Show it as verified right away (no AI call); Re-analyze refreshes the scores.
+    const { data: row } = await supabase
+      .from("job_analyses")
+      .select("id, match_report")
+      .eq("user_id", user.id)
+      .eq("job_id", d.jobId)
+      .maybeSingle();
+    if (row?.match_report) {
+      const report = row.match_report as MatchReport;
+      const same = (k: string) => k.trim().toLowerCase() === d.keyword.trim().toLowerCase();
+      report.keyword_evidence = report.keyword_evidence.map((e) =>
+        same(e.keyword) ? { ...e, status: "verified", evidence: `Your fact: "${d.factText}"` } : e
+      );
+      report.missing_keywords = report.missing_keywords.filter((k) => !same(k));
+      if (!report.matched_keywords.some(same)) report.matched_keywords.push(d.keyword);
+      // Drop concerns that only said this keyword was missing.
+      const kw = d.keyword.trim().toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const mentions = new RegExp(`(^|[^a-z0-9])${kw}([^a-z0-9]|$)`, "i");
+      report.potential_concerns = report.potential_concerns.filter(
+        (c) => !(mentions.test(c) && /\b(no|not|missing|lack|without)\b/i.test(c) && c.length < 140)
+      );
+      await supabase.from("job_analyses").update({ match_report: report }).eq("id", row.id);
+    }
+
+    revalidatePath(`/jobs/${d.jobId}`);
+    revalidatePath("/vault");
+    revalidatePath("/discover");
+    void fact;
+    return { ok: true, message: `Added to your Fact Bank${skillNote}. Tailoring can use it now.` };
+  } catch (err) {
+    if (err instanceof z.ZodError) return { ok: false, message: err.issues[0]?.message ?? "Check the form." };
+    return { ok: false, message: err instanceof Error ? err.message : "Couldn't save that." };
   }
 }

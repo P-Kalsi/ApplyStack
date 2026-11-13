@@ -16,6 +16,8 @@ import { TailorButton } from "./tailor-button";
 import { DescriptionPanel } from "./description-panel";
 import { canFetchDescription } from "@/lib/jobs/posting";
 import { sourceBadge } from "@/lib/jobs/sources/badges";
+import { canonicalSkill, extractSkills, guessSkillGroup } from "@/lib/jobs/skills";
+import { KeywordEvidence } from "./keyword-evidence";
 
 export const metadata: Metadata = { title: "Job details" };
 
@@ -264,22 +266,16 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             <div className="space-y-3 text-xs">
               <div>
                 <h3 className="mb-1 font-medium text-ink-muted">Keyword evidence</h3>
-                <ul className="space-y-1">
-                  {report.keyword_evidence.slice(0, 14).map((e) => (
-                    <li key={e.keyword} className="flex items-start gap-1.5">
-                      <Badge
-                        tone={e.status === "verified" ? "good" : e.status === "related" ? "warn" : "bad"}
-                        className="mt-px shrink-0"
-                      >
-                        {e.status}
-                      </Badge>
-                      <span className="text-ink">
-                        <span className="font-medium">{displaySkill(e.keyword)}</span>
-                        <span className="text-ink-faint"> — {e.evidence}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <KeywordEvidence
+                  jobId={job.id}
+                  rows={report.keyword_evidence.map((e) => {
+                    const skills = extractSkills(e.keyword);
+                    const isSkill = skills.length === 1 && canonicalSkill(e.keyword) === skills[0];
+                    return { ...e, isSkill, skillGroup: guessSkillGroup(e.keyword) };
+                  })}
+                  experiences={vault.experiences.map((x) => ({ id: x.id, label: `${x.role} — ${x.company}` }))}
+                  projects={vault.projects.map((x) => ({ id: x.id, label: x.name }))}
+                />
               </div>
               <AnalysisList label="Strongest projects" items={report.strongest_projects} />
               <AnalysisList label="Strongest experiences" items={report.strongest_experiences} />

@@ -154,3 +154,16 @@ test("bookmark: code, href and #import fragment round trip", () => {
   assert.equal(parseImportFragment("#something-else"), null);
   assert.equal(parseImportFragment("#import=%7Bbroken"), null);
 });
+
+import { guessSkillGroup, extractSkills } from "../src/lib/jobs/skills";
+import { displaySkill } from "../src/lib/utils";
+
+test("I've-done-this helpers: skill groups, names, lexicon", () => {
+  assert.equal(guessSkillGroup("PHP"), "languages");
+  assert.equal(guessSkillGroup("WordPress"), "frameworks");
+  assert.equal(guessSkillGroup("HubSpot"), "developer_tools");
+  assert.equal(guessSkillGroup("Independent task completion"), "other");
+  assert.equal(displaySkill("php"), "PHP");
+  assert.equal(displaySkill("wordpress"), "WordPress");
+  assert.deepEqual(extractSkills("Built WordPress pages and HubSpot forms from Figma designs").sort(), ["figma", "hubspot", "wordpress"]);
+});

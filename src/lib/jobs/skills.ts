@@ -97,6 +97,10 @@ export const SKILL_LEXICON: SkillDef[] = [
   { name: "ci/cd", aliases: ["cicd", "ci cd", "continuous integration", "continuous deployment"] },
   { name: "github actions" },
   { name: "git" },
+  { name: "wordpress", aliases: ["word press"] },
+  { name: "hubspot", aliases: ["hub spot"] },
+  { name: "figma" },
+  { name: "google analytics", aliases: ["ga4", "google analytics 4"] },
   { name: "playwright" },
   { name: "jest" },
   { name: "pytest" },
@@ -162,4 +166,20 @@ export function canonicalizeSkillList(items: string[]): string[] {
     if (c) out.add(c);
   }
   return Array.from(out);
+}
+
+const SKILL_GROUP_HINTS: Record<string, string[]> = {
+  languages: ["typescript", "javascript", "python", "java", "go", "c++", "c#", "c", "rust", "ruby", "kotlin", "swift", "php", "scala", "r", "sql", "bash", "html", "css", "latex"],
+  frameworks: ["react", "next.js", "vue", "angular", "svelte", "tailwind", "django", "flask", "fastapi", "spring", "express", "rails", "node.js", "wordpress", ".net"],
+  databases: ["postgresql", "mysql", "mongodb", "redis", "sqlite", "supabase", "dynamodb", "firebase"],
+  cloud: ["aws", "gcp", "azure", "vercel", "netlify", "cloudflare"],
+  infrastructure: ["docker", "kubernetes", "terraform", "ansible", "ci/cd", "github actions", "linux"],
+  developer_tools: ["git", "github", "jira", "figma", "postman", "vs code", "hubspot", "google analytics"],
+};
+
+/** Which Career Vault skill group a skill most likely belongs to. */
+export function guessSkillGroup(skill: string): string {
+  const s = canonicalSkill(skill);
+  for (const [group, names] of Object.entries(SKILL_GROUP_HINTS)) if (names.includes(s)) return group;
+  return "other";
 }
