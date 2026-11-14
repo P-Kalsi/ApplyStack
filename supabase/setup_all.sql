@@ -1,5 +1,5 @@
 -- ApplyStack: full database setup. Paste this whole file into Supabase → SQL Editor → Run.
--- Generated from migrations 0001-0008 (same content, in order). Run it ONCE, on a new, empty project.
+-- Generated from migrations 0001-0009 (same content, in order). Run it ONCE, on a new, empty project.
 -- Sample jobs are NOT included; they live in seed.sql and are fictional, so skip them for real use.
 
 
@@ -326,7 +326,6 @@ create index applications_user_status_idx on public.applications (user_id, statu
 create index applications_next_action_idx on public.applications (user_id, next_action_date);
 create trigger applications_updated_at before update on public.applications for each row execute function public.set_updated_at();
 
-
 -- ===== migrations/0002_rls.sql =====
 
 -- Row-level security. No user may read or write another user's records.
@@ -386,7 +385,6 @@ create policy "jobs_insert_authenticated" on public.jobs
 create policy "jobs_update_authenticated" on public.jobs
   for update using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
-
 -- ===== migrations/0003_docx_resumes.sql =====
 
 -- Word (.docx) master resumes.
@@ -410,7 +408,6 @@ alter table public.resume_versions
   add column if not exists format text not null default 'latex'
     check (format in ('latex', 'docx'));
 
-
 -- ===== migrations/0004_llm_backends.sql =====
 
 -- Multiple LLM backends: job_analyses.engine now records which backend ran
@@ -425,7 +422,6 @@ alter table public.job_analyses
 alter table public.job_analyses
   alter column engine set default 'offline';
 
-
 -- ===== migrations/0005_grants.sql =====
 
 -- Explicit table privileges for signed-in users, so ApplyStack works even when
@@ -436,7 +432,6 @@ alter table public.job_analyses
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
-
 
 -- ===== migrations/0006_simplify_feed.sql =====
 
@@ -456,7 +451,6 @@ alter table public.jobs
 
 create index if not exists jobs_open_posted_idx on public.jobs (is_open, posted_at desc nulls last);
 
-
 -- ===== migrations/0007_pluggable_sources.sql =====
 
 -- Pluggable job sources (Adzuna now; Job Bank Canada, JSearch later) and
@@ -475,7 +469,6 @@ alter table public.jobs
 
 -- Fast lookups when Discover saves the jobs on the page you're viewing.
 create index if not exists jobs_source_id_idx on public.jobs (source, source_id);
-
 
 -- ===== migrations/0008_application_answers.sql =====
 
@@ -515,3 +508,11 @@ create policy "application_answers_delete_own" on public.application_answers for
 
 grant select, insert, update, delete on public.application_answers to authenticated;
 
+-- ===== migrations/0009_more_ai_backends.sql =====
+
+-- Let job analyses record any AI backend id (e.g. 'codex_cli'), not a fixed list.
+
+alter table public.job_analyses
+  drop constraint if exists job_analyses_engine_check;
+alter table public.job_analyses
+  add constraint job_analyses_engine_check check (engine ~ '^[a-z][a-z0-9_]{1,30}$');

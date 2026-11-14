@@ -9,7 +9,7 @@ import { Input, Label, Select } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { recheckLlmBackend, saveLlmBackend } from "./actions";
 
-type Provider = "claude_cli" | "anthropic" | "openai" | "gemini" | "offline";
+type Provider = "claude_cli" | "codex_cli" | "anthropic" | "openai" | "gemini" | "offline";
 
 interface Props {
   providers: { value: Provider; label: string }[];
@@ -22,6 +22,8 @@ interface Props {
 const SETUP: Record<Provider, string> = {
   claude_cli:
     "Install once with `npm install -g @anthropic-ai/claude-code`, then run `claude` in a terminal and sign in with your own Claude account. Runs on your Claude plan; no API bill. Only works when ApplyStack runs on the same computer.",
+  codex_cli:
+    "Install once with `npm install -g @openai/codex`, then run `codex login` in a terminal and sign in with your own ChatGPT account. Runs on your ChatGPT plan's Codex usage; no API bill. Only works when ApplyStack runs on the same computer.",
   anthropic: "Set ANTHROPIC_API_KEY in .env.local (from platform.claude.com) and restart ApplyStack. Billed per use.",
   openai: "Set OPENAI_API_KEY in .env.local (from platform.openai.com) and restart ApplyStack. Billed per use.",
   gemini: "Set GEMINI_API_KEY in .env.local (from aistudio.google.com) and restart ApplyStack. Billed per use (free tier available).",
@@ -109,7 +111,7 @@ export function LlmBackendCard({ providers, defaults, keyEnv, settings, status: 
 
       <p className="text-xs text-ink-muted">
         {SETUP[provider]}
-        {provider !== "claude_cli" && provider !== "offline"
+        {provider !== "claude_cli" && provider !== "codex_cli" && provider !== "offline"
           ? ` Keys are read from ${keyEnv[provider]} only and are never saved by ApplyStack.`
           : ""}
       </p>

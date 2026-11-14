@@ -14,6 +14,9 @@ export function explainDbError(message: string): string {
   if (/is_open/.test(message)) {
     return `${message}. Your database needs an update: run supabase/migrations/0006_simplify_feed.sql in the Supabase SQL Editor.`;
   }
+  if (/job_analyses_engine_check/.test(message)) {
+    return `${message}. Your database needs an update: run supabase/migrations/0009_more_ai_backends.sql in the Supabase SQL Editor.`;
+  }
   if (/snippet|jobs_source_check/.test(message)) {
     return `${message}. Your database needs an update: run supabase/migrations/0007_pluggable_sources.sql in the Supabase SQL Editor.`;
   }

@@ -51,7 +51,7 @@ export async function analyzeJob(jobId: string): Promise<AnalyzeResult> {
       },
       { onConflict: "user_id,job_id" }
     );
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(explainDbError(error.message));
 
     revalidatePath(`/jobs/${jobId}`);
     return {
