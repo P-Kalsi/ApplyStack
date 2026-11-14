@@ -32,3 +32,6 @@ applystack.config.json
 # Local Claude skills (kept on this computer, not in the project history)
 .claude/
 skills-lock.json
+
+# Your real Career Vault starter profile (stays on this computer)
+applystack.profile.json

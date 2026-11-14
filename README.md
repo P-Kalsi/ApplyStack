@@ -107,9 +107,12 @@ npm run dev        # http://localhost:3000
 
 Sign up, then:
 
-1. **Career Vault → Overview → Load my profile.** Loads the vault defined in
-   `src/lib/vault/starter.ts` (built from the owner's master profile and resumes). Facts with
-   conflicting or unconfirmed details arrive as *pending*; approve or reject them in Fact Bank.
+1. **Career Vault → Overview → Load my profile.** Loads your profile from
+   `applystack.profile.json` in the project folder (git-ignored, so your resume details never
+   leave your computer), or a fictional sample profile (`src/lib/vault/starter.ts`) if that file
+   doesn't exist. The JSON has the same shape as the sample: `education`, `experiences`,
+   `projects` (each with `facts`), `skills` and `facts`. Facts marked *pending* wait for you to
+   approve or reject them in Fact Bank. Everything is editable in the app afterwards.
 2. **Career Vault → Master Resume → Word (.docx) → Set as master.** Pick the resume you'd send by
    default. Tailoring can rewrite, reorder and trim its bullets and skills lines, but cannot add
    projects that aren't in it, so choose one with your strongest projects.

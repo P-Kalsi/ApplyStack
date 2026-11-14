@@ -9,13 +9,7 @@ import type {
   SkillGroupRow,
   VaultSnapshot,
 } from "../types";
-import {
-  STARTER_EDUCATION,
-  STARTER_EXPERIENCES,
-  STARTER_GENERAL_FACTS,
-  STARTER_PROJECTS,
-  STARTER_SKILLS,
-} from "../vault/starter";
+import { loadStarterProfile } from "../vault/profile";
 import { extractSkills } from "../jobs/skills";
 
 export async function loadVaultSnapshot(
@@ -53,11 +47,17 @@ export function vaultIsEmpty(vault: VaultSnapshot): boolean {
 
 /**
  * Seed the starter profile for a new user: education, experiences, projects,
- * skills, and the fact bank (see vault/starter.ts). Facts flagged pending in
+ * skills, and the fact bank (your applystack.profile.json, else the sample in vault/starter.ts). Facts flagged pending in
  * the starter stay pending until approved. The master resume is uploaded
  * separately (Career Vault → Master Resume).
  */
 export async function seedStarterVault(supabase: SupabaseClient, userId: string): Promise<void> {
+  const profile = loadStarterProfile();
+  const STARTER_EDUCATION = profile.education;
+  const STARTER_EXPERIENCES = profile.experiences;
+  const STARTER_PROJECTS = profile.projects;
+  const STARTER_SKILLS = profile.skills;
+  const STARTER_GENERAL_FACTS = profile.facts;
   const { data: edu, error: eduErr } = await supabase
     .from("career_education")
     .insert({ user_id: userId, ...STARTER_EDUCATION })

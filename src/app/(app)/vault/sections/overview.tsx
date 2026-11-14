@@ -47,9 +47,9 @@ export function VaultOverview({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-ink">Load your profile</p>
             <p className="text-xs text-ink-muted">
-              Loads your Career Vault from your master profile and resumes: 6 roles, 8 projects
-              (incl. Relume and SaveMyGrade), skills, and 50+ facts. A few facts with conflicting
-              details arrive as pending for you to approve or reject. Everything is editable.
+              Loads your roles, projects, skills and facts from applystack.profile.json in the
+              project folder, or a sample profile if that file doesn&apos;t exist. Facts marked
+              pending wait for you to approve or reject them. Everything is editable.
             </p>
           </div>
           <Button
