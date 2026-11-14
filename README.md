@@ -1,11 +1,60 @@
 # ApplyStack
 
-Personal internship discovery + truthful AI resume tailoring, built for a CS student's real
-application workflow.
+**An internship search app that tailors your resume without ever making things up.**
 
-- **Discover** — a dense internship board fed by the public Greenhouse Job Board and Lever
-  Postings APIs (plus realistic seed data so it works with zero configuration), with per-job
-  match scores computed against your own profile.
+ApplyStack pulls internship postings from public feeds, scores each one against a structured
+profile of what you've actually done, and rewrites your resume bullets for a specific job. Every
+AI output is checked by deterministic code: a rewrite that adds a technology, number or claim
+you can't back with an approved fact is rejected before you see it.
+
+I built it for my own co-op and internship search. It runs locally on your machine, syncs across
+devices through Supabase, and can use your existing Claude or ChatGPT plan instead of a paid API.
+
+![Discover: a paged board of live internship postings](docs/screenshots/discover.png)
+
+## What it does
+
+- **Discover:** one paged board over several sources: the Simplify internship list, public
+  Greenhouse and Lever job boards, and the Adzuna search API. Filters for location, distance,
+  remote, role type and date. Sources are plugins, so adding another job API is one file.
+- **Import from anywhere:** a bookmarklet and a paste box turn a LinkedIn, Indeed or company
+  posting you're looking at into a job in ApplyStack. Nothing is scraped; you send the page
+  you already have open.
+- **AI job analysis:** requirements, ATS keywords and a match score, with each keyword marked
+  verified, related or missing based on your Career Vault. If you've done something it marks
+  missing, "I've done this" adds it to your fact bank for review.
+- **Resume tailoring:** upload your Word resume (or LaTeX); ApplyStack rewrites and reorders
+  bullets for the job and returns the same file with your formatting untouched. Every change
+  shows its reason and the facts it relies on before you accept it.
+- **Answers:** drafts for screening questions ("Explain how you developed this skill", skill
+  ratings, years of experience) that fit the character limit and cite your facts. Questions it
+  can't answer truthfully, like work authorization, are left to you.
+- **Applications + alerts:** a kanban/table pipeline with CSV import, and optional Discord alerts
+  when new internships matching your filters appear.
+
+| AI job analysis with keyword evidence | Screening-question drafts |
+| --- | --- |
+| ![Job analysis](docs/screenshots/analysis.png) | ![Answers](docs/screenshots/answers.png) |
+
+## Engineering highlights
+
+- **Truthfulness guard** (`src/lib/ai/guard.ts`): model output is validated with Zod, then
+  checked against the vault: unknown skills or numbers are rejected, and a keyword missing from
+  the vault can never be reported as verified. 150+ unit tests cover the guard, sources, import,
+  answers and AI backends.
+- **Swappable AI backend** (`src/lib/ai/llm.ts`): one `askLlm(prompt, tier)` function over six
+  backends. Two of them run local CLIs headlessly (`claude -p` and `codex exec`) with tools
+  disabled, a read-only sandbox, and API-key variables stripped from the child process, so they
+  bill your subscription instead of an API key.
+- **Pluggable job sources** (`src/lib/jobs/sources/`): each source implements one interface;
+  results are cached server-side and only the current page is written to the database.
+- **Supabase with row-level security** on every table, plus a demo mode that swaps in an
+  in-memory database so the whole app runs with no account.
+
+![Settings: choose the AI backend](docs/screenshots/ai-backend.png)
+
+## Core concepts
+
 - **Career Vault** — one structured source of truth: education, experiences, projects, skills,
   and an atomic **fact bank**. The AI can only ever use what lives here.
 - **Master resume** — upload your Word (`.docx`) resume or paste LaTeX. Template, content, and
@@ -35,8 +84,8 @@ Missing qualifications are always shown as missing — never papered over.
 ## Tech stack
 
 Next.js 15 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres + Auth + RLS) ·
-a switchable AI backend (Claude Code headless, or the Anthropic, OpenAI or Gemini API via the
-Vercel AI SDK) · Zod · node:test.
+a switchable AI backend (Claude Code or Codex CLI run headless, or the Anthropic, OpenAI or
+Gemini API via the Vercel AI SDK) · Zod · node:test.
 
 ## Try it without any setup (demo mode)
 
@@ -126,7 +175,7 @@ time: **Show 10 / 25 / 50 per page**, Prev / page numbers / Next, and "Showing 1
 | Source | What it is | Paging |
 | --- | --- | --- |
 | Simplify internships | Simplify's public internship list (one JSON file on GitHub), filtered in Settings → Internship feed & alerts | downloaded at most every 30 min, paged locally |
-| Adzuna | Adzuna's job search API, `country=ca` by default; needs `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` (free at developer.adzuna.com) | one API request per page you open |
+| Adzuna | Adzuna's job search API, `country=ca` by default; needs `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` (from developer.adzuna.com; the free tier is a few test calls, then a paid plan) | one API request per page you open |
 | Company boards | Greenhouse / Lever boards from Settings → Company boards | each board cached 30 min, paged locally |
 | Added by you | Jobs from **Add job** (any site, including Indeed and LinkedIn) | from your database |
 
@@ -142,7 +191,7 @@ time: **Show 10 / 25 / 50 per page**, Prev / page numbers / Next, and "Showing 1
   going back doesn't refetch; **Refresh** clears the cache. Only the jobs on the page you're
   viewing are saved to your database, descriptions are fetched only for them, and no AI call ever
   runs from Discover (match scores are deterministic; analysis and tailoring are buttons).
-- **Adzuna limits:** free keys have a daily request limit, which the per-page fetching and caching
+- **Adzuna limits:** keys have a request limit, which the per-page fetching and caching
   are designed around. Adzuna only returns a short preview of each description; the card and job
   page show it, and you add the full description with Get description or Paste.
 - **Indeed and LinkedIn** aren't sources: neither offers a public API for this, and ApplyStack
@@ -223,6 +272,7 @@ Pick the backend in **Settings → AI backend**:
 | Backend | Pays with | Default fast / smart model |
 | --- | --- | --- |
 | **Claude Code (default)** | your Claude Pro/Max/Team plan's usage limits | `haiku` / `sonnet` |
+| Codex CLI | your ChatGPT Plus/Pro/Business plan's Codex usage | `gpt-6-luna` / `gpt-6.1-sol` |
 | Anthropic API | your Anthropic Console key | `claude-haiku-5-5` / `claude-sonnet-5-5` |
 | OpenAI API | your OpenAI key | `gpt-6-luna` / `gpt-6.1-sol` |
 | Gemini API | your Gemini key | `gemini-3.1-flash-lite` / `gemini-3.5-flash` |
@@ -255,6 +305,23 @@ If `claude` itself is logged in with an API key (`claude auth status`), Settings
 This only works when ApplyStack runs on the same computer where you logged in to `claude`.
 Usage counts against your plan's normal limits, shared with Claude chat and Claude Code.
 
+### Codex CLI (uses your ChatGPT plan, no API key)
+
+```bash
+npm install -g @openai/codex
+codex login     # sign in with ChatGPT
+```
+
+ApplyStack runs `codex exec` with the prompt on stdin, a read-only sandbox, `--ephemeral` (no
+saved session) and `--skip-git-repo-check`, in an empty temp folder, and reads the final answer
+from `--output-last-message`. Codex has no separate system prompt, so ApplyStack's instructions
+are put at the top of the prompt. It removes `OPENAI_API_KEY` and `CODEX_API_KEY` from the
+subprocess environment so Codex uses your ChatGPT login. Settings checks `codex login status`
+and warns if Codex is signed in with an API key. Set `CODEX_CLI_PATH` if `codex` isn't on PATH.
+
+If you use Supabase, run `supabase/migrations/0009_more_ai_backends.sql` once so analyses made
+with Codex can be saved.
+
 ### Anthropic, OpenAI or Gemini API
 
 Put the key in `.env.local` (or `.env`), restart ApplyStack, then pick the backend in Settings:
@@ -269,9 +336,9 @@ GEMINI_API_KEY=...      # aistudio.google.com
 
 ### Use your own login or key
 
-Each person who runs ApplyStack must use **their own** Claude login or their own API key. Don't
-share a Claude subscription through ApplyStack, and don't deploy the Claude Code backend on a
-server for other people to use; for a shared deployment, use an API backend with your own key.
+Each person who runs ApplyStack must use **their own** Claude or ChatGPT login or their own API
+key. Don't share a subscription through ApplyStack, and don't deploy the Claude Code or Codex
+backend on a server for other people to use; for a shared deployment, use an API backend with your own key.
 
 ## Commands
 
