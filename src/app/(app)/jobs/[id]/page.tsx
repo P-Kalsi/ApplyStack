@@ -280,7 +280,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                   rows={report.keyword_evidence.map((e) => {
                     const skills = extractSkills(e.keyword);
                     const isSkill = skills.length === 1 && canonicalSkill(e.keyword) === skills[0];
-                    return { ...e, isSkill, skillGroup: guessSkillGroup(e.keyword) };
+                    return { ...e, evidence: withoutIds(e.evidence), isSkill, skillGroup: guessSkillGroup(e.keyword) };
                   })}
                   experiences={vault.experiences.map((x) => ({ id: x.id, label: `${x.role} — ${x.company}` }))}
                   projects={vault.projects.map((x) => ({ id: x.id, label: x.name }))}
@@ -341,4 +341,9 @@ function AnalysisList({ label, items }: { label: string; items: string[] }) {
       </ul>
     </div>
   );
+}
+
+/** Fact ids mean nothing to a reader; the fact text next to them is enough. */
+function withoutIds(text: string): string {
+  return text.replace(/\s*\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "");
 }

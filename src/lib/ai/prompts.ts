@@ -102,7 +102,8 @@ Return JSON with exactly these keys:
   "strongest_projects": string[],
   "potential_concerns": string[]
 }
-Do not inflate scores. A missing keyword must never appear in matched_keywords.`,
+Do not inflate scores. A missing keyword must never appear in matched_keywords.
+In "evidence", quote or paraphrase the fact briefly; never print fact ids.`,
   };
 }
 
