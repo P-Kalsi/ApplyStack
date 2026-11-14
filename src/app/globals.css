@@ -8,7 +8,9 @@
  * surface, surface-raised and surface-sunken in its theme.
  */
 :root {
-  /* --font-sans / --font-mono are set by next/font on <html> (layout.tsx). */
+  /* Geist from the `geist` package (layout.tsx sets --font-geist-* on <html>). */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
   --surface: 250 250 250;
   --surface-raised: 255 255 255;
   --surface-sunken: 245 245 245;

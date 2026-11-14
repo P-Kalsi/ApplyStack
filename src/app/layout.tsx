@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
-// Downloaded once at build/dev time and served locally; no runtime request to Google.
-const sans = Geist({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
+// Geist ships inside the `geist` package (next/font/local), so ApplyStack never
+// needs to reach Google Fonts, even offline. globals.css maps --font-sans /
+// --font-mono to these variables.
+const sans = GeistSans;
+const mono = GeistMono;
 
 export const viewport: Viewport = {
   themeColor: [
