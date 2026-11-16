@@ -10,6 +10,7 @@ import { FactsEditor } from "./sections/facts";
 import { ResumeEditor } from "./sections/resume";
 import { VaultOverview } from "./sections/overview";
 import { VaultTabs } from "./tabs";
+import { TabPanel } from "@/components/ui/tab-panel";
 
 export const metadata: Metadata = { title: "Career Vault" };
 
@@ -60,8 +61,7 @@ export default async function VaultPage({
 
       <VaultTabs tabs={TABS} active={tab} pendingFacts={pendingFacts} />
 
-      {/* Keyed by tab so each section settles in when you switch to it. */}
-      <div key={tab} className="animate-page-in">
+      <TabPanel index={TABS.findIndex((t) => t.key === tab)}>
       {tab === "overview" ? (
         <VaultOverview vault={vault} hasMaster={Boolean(master)} isEmpty={vaultIsEmpty(vault)} />
       ) : null}
@@ -75,7 +75,7 @@ export default async function VaultPage({
         <FactsEditor facts={vault.facts} experiences={vault.experiences} projects={vault.projects} />
       ) : null}
       {tab === "resume" ? <ResumeEditor master={master} pendingFacts={pendingFacts} /> : null}
-      </div>
+      </TabPanel>
     </div>
   );
 }

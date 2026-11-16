@@ -22,6 +22,7 @@ import { Card, EmptyState } from "@/components/ui/card";
 import { Confirm } from "@/components/ui/confirm";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { TabIndicator } from "@/components/ui/tab-indicator";
+import { TabPanel } from "@/components/ui/tab-panel";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatDate } from "@/lib/utils";
 import { deleteApplication, importApplications, moveApplication, upsertApplication } from "./actions";
@@ -114,13 +115,13 @@ export function ApplicationsClient({
           description="Save a job on the Discover board (it lands here automatically), import a CSV from your spreadsheet, or add one manually."
         />
       ) : (
-        <div key={view} className="animate-page-in">
+        <TabPanel index={view === "kanban" ? 0 : 1}>
           {view === "kanban" ? (
             <KanbanBoard applications={applications} onEdit={setEditing} />
           ) : (
             <ApplicationsTable applications={applications} versions={versions} onEdit={setEditing} />
           )}
-        </div>
+        </TabPanel>
       )}
     </div>
   );

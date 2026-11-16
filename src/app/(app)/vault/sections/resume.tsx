@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { TabIndicator } from "@/components/ui/tab-indicator";
+import { TabPanel } from "@/components/ui/tab-panel";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { extractResumeFacts, saveMasterResume, uploadMasterDocx } from "../actions";
@@ -57,9 +58,9 @@ export function ResumeEditor({
         <TabIndicator activeIndex={mode === "docx" ? 0 : 1} variant="pill" />
       </div>
 
-      <div key={mode} className="animate-page-in">
+      <TabPanel index={mode === "docx" ? 0 : 1}>
         {mode === "docx" ? <DocxUpload /> : <LatexEditor master={master?.format !== "docx" ? master : null} />}
-      </div>
+      </TabPanel>
 
       <Card>
         <CardHeader

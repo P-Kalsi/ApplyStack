@@ -259,12 +259,54 @@ a.press:active {
   transition-duration: 80ms;
 }
 
-/* Tab indicators glide to the tab you picked (see TabIndicator). */
+/*
+ * Tab switching, tuned to transitions.dev ("tabs sliding" + "page side-by-side"):
+ * the indicator glides to the tab you picked, and the new content slides 8px in
+ * from that side while a 3px blur clears.
+ */
+:root {
+  --tabs-dur: 250ms;
+  --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --page-slide-dur: 250ms;
+  --page-fade-dur: 250ms;
+  --page-slide-distance: 8px;
+  --page-blur: 3px;
+  --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
 .tab-glide {
   transition:
-    transform 420ms var(--ease-out),
-    width 420ms var(--ease-out),
-    height 420ms var(--ease-out);
+    transform var(--tabs-dur) var(--tabs-ease),
+    width var(--tabs-dur) var(--tabs-ease),
+    height var(--tabs-dur) var(--tabs-ease);
+  will-change: transform, width;
+}
+[data-tab] {
+  transition-property: color, background-color, transform;
+  transition-duration: var(--tabs-dur);
+  transition-timing-function: var(--tabs-ease);
+}
+.tab-panel {
+  animation:
+    tab-panel-slide var(--page-slide-dur) var(--page-slide-ease) both,
+    tab-panel-fade var(--page-fade-dur) var(--page-slide-ease) both;
+}
+@keyframes tab-panel-slide {
+  from {
+    transform: translateX(calc(var(--page-slide-distance) * var(--tab-dir, 0)));
+    filter: blur(var(--page-blur));
+  }
+  to {
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes tab-panel-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Cards you can open lift a little under a mouse (never on touch). */
@@ -365,6 +407,10 @@ a.press:active {
     --rise: 0px;
     --pop: 1;
     --sweep: 1;
+    /* Tab content cross-fades in place; the small indicator glide stays,
+       since it only follows your own click. */
+    --page-slide-distance: 0px;
+    --page-blur: 0px;
   }
   .stagger > *,
   .animate-page-in {
