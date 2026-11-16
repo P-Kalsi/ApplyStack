@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type Tone = "neutral" | "accent" | "good" | "warn" | "bad" | "outline" | "mark";
+type Tone = "neutral" | "accent" | "good" | "warn" | "bad" | "outline" | "have";
 
 const tones: Record<Tone, string> = {
   neutral: "bg-surface-sunken text-ink-muted border-line",
@@ -9,8 +9,8 @@ const tones: Record<Tone, string> = {
   warn: "bg-warn/10 text-warn border-warn/25",
   bad: "bg-bad/10 text-bad border-bad/25",
   outline: "bg-transparent text-ink-muted border-line-strong",
-  // Highlighter: something you can truthfully claim.
-  mark: "hl border-transparent",
+  // Green highlighter: a skill you have and can truthfully claim.
+  have: "hl hl-have hl-draw border-transparent",
 };
 
 export function Badge({

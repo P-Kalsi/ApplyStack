@@ -53,11 +53,12 @@ const config: Config = {
         overlay: "0 12px 32px -8px rgb(var(--ink) / 0.18), 0 0 0 1px rgb(var(--line))",
       },
       animation: {
-        "page-in": "page-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both",
-        "overlay-in": "overlay-in 160ms ease-out both",
-        "dialog-in": "dialog-in 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both",
-        "toast-in": "toast-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both",
-        "menu-in": "menu-in 180ms cubic-bezier(0.2, 0.7, 0.2, 1) both",
+        // Keyframes and easing live in globals.css (they shrink to fades under reduced motion).
+        "page-in": "fade-rise 420ms var(--ease-out) both",
+        "overlay-in": "fade-in 200ms ease-out both",
+        "dialog-in": "fade-pop 260ms var(--ease-out) both",
+        "toast-in": "fade-pop 300ms var(--ease-out) both",
+        "menu-in": "menu-drop 240ms var(--ease-out) both",
       },
     },
   },

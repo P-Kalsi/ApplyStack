@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { SkillGroupRow } from "@/lib/types";
 import { SKILL_CATEGORIES } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,8 @@ export function SkillsEditor({ skills }: { skills: SkillGroupRow[] }) {
       />
       <div className="divide-y divide-line">
         {SKILL_CATEGORIES.map((cat) => {
-          const existing = byCategory.get(cat.value)?.items.join(", ") ?? "";
+          const items = byCategory.get(cat.value)?.items ?? [];
+          const existing = items.join(", ");
           const dirty = (drafts[cat.value] || "") !== existing;
           return (
             <div key={cat.value} className="flex flex-wrap items-center gap-2 px-4 py-2.5">
@@ -72,6 +74,15 @@ export function SkillsEditor({ skills }: { skills: SkillGroupRow[] }) {
               >
                 Save
               </Button>
+              {items.length ? (
+                <ul className="flex w-full flex-wrap gap-1 sm:pl-[10.5rem]" aria-label={`Your ${cat.label} skills`}>
+                  {items.map((item, i) => (
+                    <li key={`${item}-${i}`}>
+                      <Badge tone="have">{item}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           );
         })}

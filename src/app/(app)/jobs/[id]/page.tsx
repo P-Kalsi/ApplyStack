@@ -163,7 +163,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                 <div className="flex flex-wrap gap-1">
                   {match.matchedSkills.length ? (
                     match.matchedSkills.map((s) => (
-                      <Badge key={s} tone="mark">
+                      <Badge key={s} tone="have">
                         {displaySkill(s)}
                       </Badge>
                     ))
@@ -193,7 +193,13 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             <CardHeader title="Parsed skills" description="Extracted from the posting" />
             <div className="flex flex-wrap gap-1 px-4 py-3">
               {job.skills.map((s) => (
-                <Badge key={s}>{displaySkill(s)}</Badge>
+                <Badge
+                  key={s}
+                  tone={match.matchedSkills.includes(s) ? "have" : "neutral"}
+                  title={match.matchedSkills.includes(s) ? "In your Career Vault" : undefined}
+                >
+                  {displaySkill(s)}
+                </Badge>
               ))}
             </div>
           </Card>

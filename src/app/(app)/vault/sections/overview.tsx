@@ -72,7 +72,7 @@ export function VaultOverview({
         </Card>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="stagger grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {stats.map(({ label, count, href, icon: Icon }) => (
           <Link key={label} href={href}>
             <Card className="p-3 transition-colors hover:border-line-strong">

@@ -29,6 +29,9 @@
      Only ever a background under --mark-ink text, never a text colour. */
   --mark: 255 226 82;
   --mark-ink: 29 28 16;
+  /* Green highlighter: skills you have. Background only, under --have-ink. */
+  --have: 172 236 190;
+  --have-ink: 10 48 25;
   --good: 21 116 54;
   --warn: 146 84 4;
   --bad: 185 28 28;
@@ -49,6 +52,8 @@
   --accent-ink: 18 20 26;
   --mark: 222 192 72;
   --mark-ink: 24 22 10;
+  --have: 92 204 132;
+  --have-ink: 6 28 14;
   --good: 74 222 128;
   --warn: 250 204 21;
   --bad: 248 113 113;
@@ -142,6 +147,111 @@ label[for] {
   color: rgb(var(--mark-ink));
   border-radius: 3px 7px 4px 8px / 7px 3px 8px 4px;
 }
+.hl-have {
+  background-color: rgb(var(--have));
+  color: rgb(var(--have-ink));
+}
+
+/*
+ * Motion. Researched defaults: a strong ease-out (fast start, soft landing),
+ * 200-450ms, lists staggered ~45ms per item, nothing scales up from zero.
+ * --rise / --pop / --sweep collapse to "no movement" under reduced motion,
+ * so the same animations become plain fades instead of disappearing.
+ */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --rise: 14px;
+  --pop: 0.96;
+  --sweep: 0;
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-pop {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--rise) / 2)) scale(var(--pop));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes menu-drop {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--rise) * -0.6));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* A highlighter pass: the stroke is uncovered left to right. */
+@keyframes marker {
+  from {
+    clip-path: inset(0 100% 0 0 round 4px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 4px);
+  }
+}
+@keyframes mark-sweep {
+  from {
+    transform: scaleX(var(--sweep));
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Lists: each child rises in shortly after the one before it. */
+.stagger > * {
+  animation: fade-rise 480ms var(--ease-out) both;
+}
+.stagger > :nth-child(1) { animation-delay: 0ms; }
+.stagger > :nth-child(2) { animation-delay: 45ms; }
+.stagger > :nth-child(3) { animation-delay: 90ms; }
+.stagger > :nth-child(4) { animation-delay: 135ms; }
+.stagger > :nth-child(5) { animation-delay: 180ms; }
+.stagger > :nth-child(6) { animation-delay: 225ms; }
+.stagger > :nth-child(7) { animation-delay: 270ms; }
+.stagger > :nth-child(8) { animation-delay: 315ms; }
+.stagger > :nth-child(9) { animation-delay: 360ms; }
+.stagger > :nth-child(10) { animation-delay: 405ms; }
+.stagger > :nth-child(11) { animation-delay: 450ms; }
+.stagger > :nth-child(n + 12) { animation-delay: 495ms; }
+
+/* Cards you can open lift a little under a mouse (never on touch). */
+@media (hover: hover) and (pointer: fine) {
+  .lift {
+    transition:
+      transform 220ms var(--ease-out),
+      box-shadow 220ms var(--ease-out),
+      border-color 150ms ease;
+  }
+  .lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px -14px rgb(var(--ink) / 0.22);
+  }
+}
 
 /* The nav's highlighter sweeps in under the page you just opened. */
 .nav-mark {
@@ -151,16 +261,15 @@ label[for] {
   background-color: rgb(var(--mark));
   border-radius: 2px 6px 3px 7px / 5px 2px 6px 3px;
   transform-origin: left center;
-  animation: mark-sweep 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: mark-sweep 520ms var(--ease-out) both;
 }
 
-@keyframes mark-sweep {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+/* Your own skills get drawn on with the highlighter as they appear. */
+.hl-draw {
+  animation: marker 560ms var(--ease-out) 120ms both;
+}
+.stagger > * .hl-draw {
+  animation-delay: 380ms;
 }
 
 /* Sign-in page: highlighter strokes drawn across a sample resume line. */
@@ -172,7 +281,7 @@ label[for] {
   border-radius: 3px 7px 4px 8px / 7px 3px 8px 4px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  animation: stroke-draw 520ms cubic-bezier(0.3, 0.6, 0.2, 1) both;
+  animation: stroke-draw 640ms var(--ease-out) both;
 }
 @keyframes stroke-draw {
   to {
@@ -198,55 +307,6 @@ label[for] {
   }
 }
 
-/* Motion that answers an action: pages settle in, overlays open, toasts arrive. */
-@keyframes page-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes overlay-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes dialog-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateX(12px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes menu-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
 /* Skeletons: a slow sheen rather than a blink. */
 @keyframes sheen {
   from {
@@ -268,14 +328,32 @@ label[for] {
   animation: sheen 1.6s ease-in-out infinite;
 }
 
+/*
+ * Reduced motion (macOS: Accessibility > Display > Reduce motion): nothing
+ * slides, scales or sweeps, but things still fade in, briefly.
+ */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  :root {
+    --rise: 0px;
+    --pop: 1;
+    --sweep: 1;
+  }
+  .stagger > *,
+  .animate-page-in {
+    animation-duration: 260ms;
+  }
+  .hl-draw,
+  .auth-stroke {
+    animation-duration: 1ms;
+  }
+  .skeleton {
+    animation: none;
+  }
+  .lift:hover {
+    transform: none;
+  }
+  html {
+    scroll-behavior: auto;
   }
 }
 

@@ -131,7 +131,7 @@ export function ReviewClient({
             <ScoreBadge score={version.match_score_after} label="After (with accepted changes)" />
           </div>
           <SummaryChips label="Keywords added" items={version.keywords_added} tone="accent" />
-          <SummaryChips label="Skills emphasized" items={version.skills_emphasized} tone="good" />
+          <SummaryChips label="Skills emphasized" items={version.skills_emphasized} tone="have" />
           <SummaryChips
             label="Still missing (no vault support — honestly not claimed)"
             items={version.still_missing}
@@ -184,7 +184,7 @@ function SummaryChips({
 }: {
   label: string;
   items: string[];
-  tone: "accent" | "good" | "bad";
+  tone: "accent" | "good" | "bad" | "have";
 }) {
   if (!items.length) return null;
   return (

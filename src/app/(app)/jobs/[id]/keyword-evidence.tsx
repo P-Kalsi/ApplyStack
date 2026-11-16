@@ -55,7 +55,7 @@ export function KeywordEvidence({
         <li key={e.keyword}>
           <div className="flex items-start gap-1.5">
             <Badge
-              tone={e.status === "verified" ? "good" : e.status === "related" ? "warn" : "bad"}
+              tone={e.status === "verified" ? "have" : e.status === "related" ? "warn" : "bad"}
               className="mt-px shrink-0"
             >
               {e.status}

@@ -8,16 +8,20 @@ Nov 2026 because it read as a generic developer dashboard.
   (#12141a / #1a1d25, #e9eaee ink). Never cream.
 - Accent: fountain-pen ink blue (#2a3bb0 light, #94a0ff dark) for primary actions, links and focus.
 - Highlighter: --mark (#ffe252 light, #dec048 dark) is only ever a background under --mark-ink text.
-  It marks things you truthfully have: matched skills, the current nav item, empty-state icons. The
-  `.hl` class gives it slightly uneven marker edges. Status colours green/amber/red stay for scores
-  and alerts.
+  It marks the current nav item and empty-state icons; `.hl` gives it slightly uneven marker edges.
+- Green highlighter: --have (#acecbe light, #5ccc84 dark) under --have-ink, via Badge tone="have",
+  marks skills you have: matched skills, verified keywords, your Career Vault skills. Status colours
+  green/amber/red stay for scores and alerts.
 - Every text token passes WCAG AA (4.5:1) on every surface, in both themes. Colours live only as CSS
   variables in src/app/globals.css, mapped to Tailwind names in tailwind.config.ts.
 - Density: 14px body, 12px smallest content text, 26px/700 page titles, 7px radius on controls, 10px
   on cards, hairline borders, shadows only on overlays (dialogs, toasts, the auth card).
-- Motion answers actions only: the nav highlighter sweeps under the page you open, pages settle in
-  (220ms), dialogs/menus/toasts ease in, skeletons use a slow sheen. The sign-in page draws its
-  highlighter strokes once on load. All of it is disabled by prefers-reduced-motion.
+- Motion: one strong ease-out curve (--ease-out, cubic-bezier(0.23, 1, 0.32, 1)), 200-640ms. Pages
+  rise in, card grids stagger 45ms per card (`.stagger`), job cards lift on mouse hover (`.lift`),
+  the nav highlighter sweeps under the page you open, green skill chips are drawn on like a marker
+  pass, dialogs/menus/toasts ease in, skeletons get a sheen, and the sign-in page draws its strokes
+  once on load. Under prefers-reduced-motion nothing moves (--rise/--pop/--sweep collapse) but
+  content still fades in.
 - Focus: 2px accent outline, 2px offset, on every interactive element. Touch: 44px targets on coarse
   pointers.
 -->

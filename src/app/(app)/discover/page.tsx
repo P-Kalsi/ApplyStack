@@ -89,7 +89,7 @@ async function Results({ params }: { params: SearchParams }) {
           description="Try a bigger radius, Both instead of Local only, a different source, or clear the search."
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="stagger grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {rows.map((job) => {
             const m = computeMatch(job, vault);
             return (

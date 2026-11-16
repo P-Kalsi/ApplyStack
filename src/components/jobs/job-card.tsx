@@ -49,7 +49,7 @@ export function JobCard({
   const [isSaved, setIsSaved] = useState(saved);
 
   return (
-    <article className="group flex flex-col gap-3 rounded-lg border border-line bg-surface-raised p-4 transition-colors duration-150 hover:border-line-strong">
+    <article className="lift group flex flex-col gap-3 rounded-lg border border-line bg-surface-raised p-4 hover:border-line-strong">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-ink-muted">{job.company}</p>
@@ -98,7 +98,7 @@ export function JobCard({
       {match.matchedSkills.length || match.missingSkills.length ? (
         <div className="flex flex-wrap gap-1">
           {match.matchedSkills.slice(0, 5).map((s) => (
-            <Badge key={s} tone="mark" title="You can truthfully claim this skill">
+            <Badge key={s} tone="have" title="You can truthfully claim this skill">
               <span className="sr-only">Matched skill: </span>
               {displaySkill(s)}
             </Badge>
