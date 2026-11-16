@@ -3,8 +3,9 @@
 import { motion, type Transition } from "motion/react";
 import { cn } from "@/lib/utils";
 
-// ibelick's Animated Tabs / AnimatedBackground (Motion Primitives, MIT) tuning.
-export const pillSpring: Transition = { type: "spring", bounce: 0.2, duration: 0.3 };
+// Based on ibelick's Animated Tabs (Motion Primitives, MIT: bounce 0.2, 0.3s),
+// slowed so the pill visibly travels between tabs.
+export const pillSpring: Transition = { type: "spring", bounce: 0.2, duration: 0.45 };
 
 /**
  * A background that springs from item to item. Render it inside the active

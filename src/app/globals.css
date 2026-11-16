@@ -251,14 +251,15 @@ a.press:active {
 }
 
 /*
- * Tab content, tuned to transitions.dev ("page side-by-side"): the new section
- * slides 8px in from the side of the tab you picked while a 3px blur clears.
+ * Tab content, after transitions.dev ("page side-by-side", 250ms / 8px there,
+ * slowed here): the new section slides 12px in from the side of the tab you
+ * picked while a 3px blur clears.
  * The tab pills themselves spring via SpringPill (Motion).
  */
 :root {
-  --page-slide-dur: 250ms;
-  --page-fade-dur: 250ms;
-  --page-slide-distance: 8px;
+  --page-slide-dur: 380ms;
+  --page-fade-dur: 340ms;
+  --page-slide-distance: 12px;
   --page-blur: 3px;
   --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }

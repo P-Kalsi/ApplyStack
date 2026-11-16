@@ -30,6 +30,12 @@ const items = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
+// Every menu link uses prefetch={true}: in production Next downloads each
+// page's full content in the background (not just the loading skeleton,
+// which is all a dynamic page gets by default), keeps it for staleTimes.static,
+// re-fetches it after any save (revalidatePath clears the cache) and on hover.
+// Prefetching never runs under `npm run dev`; use `npm run prod`.
+
 const iconButton =
   "inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11";
 
@@ -59,6 +65,7 @@ export function AppNav({ email, signOutAction }: { email: string; signOutAction:
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4 sm:px-6">
         <Link
           href="/discover"
+          prefetch
           className="mr-2 flex shrink-0 items-center gap-2 rounded-md"
           aria-label="ApplyStack home"
         >
@@ -80,6 +87,7 @@ export function AppNav({ email, signOutAction }: { email: string; signOutAction:
               <Link
                 key={href}
                 href={href}
+                prefetch
                 aria-current={active ? "page" : undefined}
                 onClick={() => setTarget(href)}
                 onMouseEnter={() => setHovered(href)}
@@ -144,6 +152,7 @@ export function AppNav({ email, signOutAction }: { email: string; signOutAction:
                 <li key={href}>
                   <Link
                     href={href}
+                    prefetch
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors",

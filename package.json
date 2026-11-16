@@ -10,6 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "prod": "next build && next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "tsc -p tsconfig.test.json && node --test \".test-build/tests/*.test.js\""
