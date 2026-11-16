@@ -50,6 +50,9 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
 - **Follow-ups:** Applications shows which applications are due a nudge (a week after applying,
   again a week later, and after an assessment or interview), each with a short draft to copy.
   Nothing is sent for you; mark it sent and the next one is scheduled.
+- **Outreach:** an application email (with subject and attachment checklist), a referral request,
+  a note to the hiring manager, or a 300-character LinkedIn note for a recruiter or an engineer,
+  in your voice and from your facts, with the same checks. Nothing is sent for you.
 - **Interview prep:** STAR stories built only from your approved facts and mapped to the posting's
   requirements, topics to review and questions to ask. The reflection is a question for you to
   answer, never written for you. Every story also lands in the Career Vault's story bank.

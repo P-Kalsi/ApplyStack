@@ -16,6 +16,7 @@ import { TailorButton } from "./tailor-button";
 import { OpenCheckButton } from "./open-check-button";
 import { CoverLetterCard, type CoverLetterRow } from "./cover-letter";
 import { InterviewPrepCard, type PrepView } from "./interview-prep";
+import { OutreachCard } from "./outreach";
 import { DescriptionPanel } from "./description-panel";
 import { canFetchDescription } from "@/lib/jobs/posting";
 import { sourceBadge } from "@/lib/jobs/sources/badges";
@@ -381,6 +382,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         hasTemplate={samples.some((s) => s.is_template)}
         hasDescription={hasDescription}
       />
+      <OutreachCard jobId={job.id} hasDescription={hasDescription} />
       <InterviewPrepCard jobId={job.id} prep={prep} hasDescription={hasDescription} />
       <Card>
         <CardHeader

@@ -10,6 +10,8 @@ import { docxPlainText } from "@/lib/resume/docx";
 import { isLetterTemplate } from "@/lib/letters/docx";
 import { checkEdited, defaultRecipient, LETTER_FOCUS, LETTER_TONE, splitLetter, type WritingSample } from "@/lib/letters/letters";
 import { draftCoverLetter } from "@/lib/ai/letters";
+import { draftOutreach } from "@/lib/ai/outreach";
+import { attachments, outreachKind, type OutreachKind } from "@/lib/outreach/outreach";
 
 export interface ActionResult {
   ok: boolean;
@@ -245,5 +247,37 @@ export async function saveCoverLetter(input: z.input<typeof SaveSchema>): Promis
   } catch (err) {
     if (err instanceof z.ZodError) return { ok: false, message: err.issues[0]?.message ?? "Check the letter." };
     return fail(err, "Couldn't save the letter.");
+  }
+}
+
+export interface OutreachResult {
+  ok: boolean;
+  message: string;
+  draft?: { subject: string; body: string; length: number; limit: number; factTexts: string[]; issues: string[]; attachments: string[] };
+}
+
+/** Draft an outreach message for a job. Nothing is stored or sent; you copy it. */
+export async function draftOutreachMessage(jobId: string, kind: string, recipient: string): Promise<OutreachResult> {
+  try {
+    if (!outreachKind(kind)) return { ok: false, message: "Pick a kind of message." };
+    const user = await requireUser();
+    const supabase = await createClient();
+    const job = await getJob(supabase, jobId);
+    if (!job) return { ok: false, message: "Job not found." };
+    if (!job.description_text?.trim()) return { ok: false, message: "Add the job description first." };
+    const [vault, samplesRes, letterRes] = await Promise.all([
+      loadVaultSnapshot(supabase, user.id),
+      supabase.from("writing_samples").select("id, title, content").eq("user_id", user.id).order("created_at", { ascending: false }).limit(MAX_SAMPLES),
+      supabase.from("cover_letters").select("id").eq("user_id", user.id).eq("job_id", job.id).maybeSingle(),
+    ]);
+    const samples = (samplesRes.error ? [] : samplesRes.data || []) as WritingSample[];
+    const draft = await draftOutreach(job, vault, samples, kind as OutreachKind, recipient.slice(0, 80));
+    return {
+      ok: true,
+      message: draft.issues.length ? `Drafted. ${draft.issues.length} thing${draft.issues.length === 1 ? "" : "s"} to check.` : "Drafted from your facts.",
+      draft: { ...draft, attachments: attachments(kind as OutreachKind, Boolean(letterRes.data)) },
+    };
+  } catch (err) {
+    return fail(err, "Couldn't draft the message.");
   }
 }
