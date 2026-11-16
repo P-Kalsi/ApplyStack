@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, EmptyState } from "@/components/ui/card";
 import { Confirm } from "@/components/ui/confirm";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
-import { TabIndicator } from "@/components/ui/tab-indicator";
+import { PillLabel, SpringPill } from "@/components/ui/spring-pill";
 import { TabPanel } from "@/components/ui/tab-panel";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatDate } from "@/lib/utils";
@@ -63,32 +63,35 @@ export function ApplicationsClient({
           <p className="mt-1 text-sm tabular-nums text-ink-muted">{applications.length} in your pipeline</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative isolate flex rounded-md border border-line-strong bg-surface-raised p-0.5" role="tablist">
+          <div className="isolate flex rounded-md border border-line-strong bg-surface-raised p-0.5" role="tablist">
             <button
               role="tab"
-              data-tab
               aria-selected={view === "kanban"}
               onClick={() => setView("kanban")}
               className={cn(
-                "relative z-10 inline-flex h-8 items-center gap-1.5 rounded-[5px] px-3 text-xs font-medium transition-colors [@media(pointer:coarse)]:min-h-[40px]",
+                "relative inline-flex h-8 items-center rounded-[5px] px-3 text-xs font-medium transition-colors [@media(pointer:coarse)]:min-h-[40px]",
                 view === "kanban" ? "text-accent" : "text-ink-muted hover:text-ink"
               )}
             >
-              <Kanban className="h-3.5 w-3.5" aria-hidden /> Kanban
+              {view === "kanban" ? <SpringPill layoutId="apps-view" className="bg-accent-soft" radius={5} /> : null}
+              <PillLabel className="gap-1.5">
+                <Kanban className="h-3.5 w-3.5" aria-hidden /> Kanban
+              </PillLabel>
             </button>
             <button
               role="tab"
-              data-tab
               aria-selected={view === "table"}
               onClick={() => setView("table")}
               className={cn(
-                "relative z-10 inline-flex h-8 items-center gap-1.5 rounded-[5px] px-3 text-xs font-medium transition-colors [@media(pointer:coarse)]:min-h-[40px]",
+                "relative inline-flex h-8 items-center rounded-[5px] px-3 text-xs font-medium transition-colors [@media(pointer:coarse)]:min-h-[40px]",
                 view === "table" ? "text-accent" : "text-ink-muted hover:text-ink"
               )}
             >
-              <Table2 className="h-3.5 w-3.5" aria-hidden /> Table
+              {view === "table" ? <SpringPill layoutId="apps-view" className="bg-accent-soft" radius={5} /> : null}
+              <PillLabel className="gap-1.5">
+                <Table2 className="h-3.5 w-3.5" aria-hidden /> Table
+              </PillLabel>
             </button>
-            <TabIndicator activeIndex={view === "kanban" ? 0 : 1} variant="pill" />
           </div>
           <ImportCsvButton />
           <Button size="sm" variant="primary" onClick={() => setAdding(true)}>

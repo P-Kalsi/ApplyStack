@@ -18,7 +18,8 @@ Nov 2026 because it read as a generic developer dashboard.
   on cards, hairline borders, shadows only on overlays (dialogs, toasts, the auth card).
 - Motion: one strong ease-out curve (--ease-out, cubic-bezier(0.23, 1, 0.32, 1)), 200-640ms. Pages
   rise in, card grids stagger 45ms per card (`.stagger`), job cards lift on mouse hover (`.lift`),
-  the nav highlighter sweeps under the page you open, green skill chips are drawn on like a marker
+  the nav highlighter, Vault tabs and segmented controls spring between items (Motion `layoutId`,
+  ibelick's Animated Tabs tuning: spring, bounce 0.2, 0.3s) with a hover background following the mouse, green skill chips are drawn on like a marker
   pass, dialogs/menus/toasts ease in, skeletons get a sheen, and the sign-in page draws its strokes
   once on load. Under prefers-reduced-motion nothing moves (--rise/--pop/--sweep collapse) but
   content still fades in.

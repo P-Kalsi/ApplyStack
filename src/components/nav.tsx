@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./theme-toggle";
 import { LogoMark } from "./logo";
+import { PillLabel, SpringPill } from "./ui/spring-pill";
 
 const items = [
   { href: "/discover", label: "Discover", icon: Compass },
@@ -35,11 +36,17 @@ const iconButton =
 export function AppNav({ email, signOutAction }: { email: string; signOutAction: () => Promise<void> }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState<string | null>(null);
+  // The page you just clicked, until its route has actually loaded.
+  const [target, setTarget] = useState<string | null>(null);
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const current = items.find((i) => isActive(i.href));
 
   // Close the mobile menu on navigation and on Escape.
-  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    setOpen(false);
+    setTarget(null);
+  }, [pathname]);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -59,24 +66,38 @@ export function AppNav({ email, signOutAction }: { email: string; signOutAction:
           <span className="text-base font-bold tracking-tight text-ink">ApplyStack</span>
         </Link>
 
-        {/* Desktop: inline links */}
-        <nav className="hidden min-w-0 flex-1 items-center gap-0.5 lg:flex" aria-label="Main">
+        {/* Desktop: inline links. The yellow highlighter springs to the page you
+            click (before it has loaded); a soft background follows the mouse. */}
+        <nav
+          className="isolate hidden min-w-0 flex-1 items-center gap-0.5 lg:flex"
+          aria-label="Main"
+          onMouseLeave={() => setHovered(null)}
+        >
           {items.map(({ href, label, icon: Icon }) => {
             const active = isActive(href);
+            const marked = target ? target === href : active;
             return (
               <Link
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
+                onClick={() => setTarget(href)}
+                onMouseEnter={() => setHovered(href)}
+                onFocus={() => setHovered(href)}
                 className={cn(
-                  "relative isolate inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors",
-                  active ? "font-semibold text-mark-ink" : "text-ink-muted hover:bg-surface-sunken hover:text-ink"
+                  "relative inline-flex h-8 shrink-0 items-center rounded-md px-3 text-[13px] font-medium transition-colors",
+                  marked ? "font-semibold text-mark-ink" : "text-ink-muted hover:text-ink"
                 )}
               >
-                {/* Keyed by path so the stroke redraws under each page you open. */}
-                {active ? <span key={pathname} className="nav-mark" aria-hidden /> : null}
-                <Icon className="h-4 w-4" aria-hidden />
-                {label}
+                {marked ? (
+                  <SpringPill layoutId="nav-mark" className="nav-pill bg-mark" radius="3px 7px 4px 8px / 7px 3px 8px 4px" />
+                ) : hovered === href ? (
+                  <SpringPill layoutId="nav-hover" className="bg-surface-sunken" />
+                ) : null}
+                <PillLabel className="gap-1.5">
+                  <Icon className="h-4 w-4" aria-hidden />
+                  {label}
+                </PillLabel>
               </Link>
             );
           })}

@@ -155,7 +155,7 @@ label[for] {
 /*
  * Motion. Researched defaults: a strong ease-out (fast start, soft landing),
  * 200-450ms, lists staggered ~45ms per item, nothing scales up from zero.
- * --rise / --pop / --sweep collapse to "no movement" under reduced motion,
+ * --rise / --pop collapse to "no movement" under reduced motion,
  * so the same animations become plain fades instead of disappearing.
  */
 :root {
@@ -163,7 +163,6 @@ label[for] {
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --rise: 14px;
   --pop: 0.96;
-  --sweep: 0;
 }
 
 @keyframes fade-rise {
@@ -213,14 +212,6 @@ label[for] {
     clip-path: inset(0 0 0 0 round 4px);
   }
 }
-@keyframes mark-sweep {
-  from {
-    transform: scaleX(var(--sweep));
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
 
 /* Lists: each child rises in shortly after the one before it. */
 .stagger > * {
@@ -260,30 +251,16 @@ a.press:active {
 }
 
 /*
- * Tab switching, tuned to transitions.dev ("tabs sliding" + "page side-by-side"):
- * the indicator glides to the tab you picked, and the new content slides 8px in
- * from that side while a 3px blur clears.
+ * Tab content, tuned to transitions.dev ("page side-by-side"): the new section
+ * slides 8px in from the side of the tab you picked while a 3px blur clears.
+ * The tab pills themselves spring via SpringPill (Motion).
  */
 :root {
-  --tabs-dur: 250ms;
-  --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --page-slide-dur: 250ms;
   --page-fade-dur: 250ms;
   --page-slide-distance: 8px;
   --page-blur: 3px;
   --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
-}
-.tab-glide {
-  transition:
-    transform var(--tabs-dur) var(--tabs-ease),
-    width var(--tabs-dur) var(--tabs-ease),
-    height var(--tabs-dur) var(--tabs-ease);
-  will-change: transform, width;
-}
-[data-tab] {
-  transition-property: color, background-color, transform;
-  transition-duration: var(--tabs-dur);
-  transition-timing-function: var(--tabs-ease);
 }
 .tab-panel {
   animation:
@@ -323,15 +300,9 @@ a.press:active {
   }
 }
 
-/* The nav's highlighter sweeps in under the page you just opened. */
-.nav-mark {
-  position: absolute;
+/* The nav's highlighter (a SpringPill) sits just inside its link. */
+.nav-pill {
   inset: 0.125rem 0.25rem;
-  z-index: -1;
-  background-color: rgb(var(--mark));
-  border-radius: 2px 6px 3px 7px / 5px 2px 6px 3px;
-  transform-origin: left center;
-  animation: mark-sweep 520ms var(--ease-out) both;
 }
 
 /* Your own skills get drawn on with the highlighter as they appear. */
@@ -406,7 +377,6 @@ a.press:active {
   :root {
     --rise: 0px;
     --pop: 1;
-    --sweep: 1;
     /* Tab content cross-fades in place; the small indicator glide stays,
        since it only follows your own click. */
     --page-slide-distance: 0px;

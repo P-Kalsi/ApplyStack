@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Input, Label, Textarea } from "@/components/ui/input";
-import { TabIndicator } from "@/components/ui/tab-indicator";
+import { PillLabel, SpringPill } from "@/components/ui/spring-pill";
 import { TabPanel } from "@/components/ui/tab-panel";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,7 @@ export function ResumeEditor({
     <div className="space-y-3">
       {master ? <CurrentMaster master={master} /> : null}
 
-      <div className="relative isolate flex w-fit gap-1 rounded-md border border-line bg-surface-raised p-0.5" role="tablist">
+      <div className="isolate flex w-fit gap-1 rounded-md border border-line bg-surface-raised p-0.5" role="tablist">
         {(
           [
             ["docx", "Word (.docx)"],
@@ -44,18 +44,17 @@ export function ResumeEditor({
           <button
             key={value}
             role="tab"
-            data-tab
             aria-selected={mode === value}
             onClick={() => setMode(value)}
             className={cn(
-              "relative z-10 h-8 rounded-[5px] px-3 text-xs font-medium transition-colors",
+              "relative h-8 rounded-[5px] px-3 text-xs font-medium transition-colors",
               mode === value ? "text-accent" : "text-ink-muted hover:text-ink"
             )}
           >
-            {label}
+            {mode === value ? <SpringPill layoutId="resume-mode" className="bg-accent-soft" radius={5} /> : null}
+            <PillLabel>{label}</PillLabel>
           </button>
         ))}
-        <TabIndicator activeIndex={mode === "docx" ? 0 : 1} variant="pill" />
       </div>
 
       <TabPanel index={mode === "docx" ? 0 : 1}>
