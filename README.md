@@ -50,6 +50,9 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
 - **Follow-ups:** Applications shows which applications are due a nudge (a week after applying,
   again a week later, and after an assessment or interview), each with a short draft to copy.
   Nothing is sent for you; mark it sent and the next one is scheduled.
+- **Interview prep:** STAR stories built only from your approved facts and mapped to the posting's
+  requirements, topics to review and questions to ask. The reflection is a question for you to
+  answer, never written for you. Every story also lands in the Career Vault's story bank.
 - **Insights:** your funnel, reply and advance rates by channel and by kind of role (small samples
   flagged), requirements you keep missing across jobs you applied to, and applications gone quiet.
   Job pages also flag a posting the company has listed before (repost detection).

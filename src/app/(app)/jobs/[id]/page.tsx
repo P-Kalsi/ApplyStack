@@ -15,6 +15,7 @@ import { AnalyzeButton } from "./analyze-button";
 import { TailorButton } from "./tailor-button";
 import { OpenCheckButton } from "./open-check-button";
 import { CoverLetterCard, type CoverLetterRow } from "./cover-letter";
+import { InterviewPrepCard, type PrepView } from "./interview-prep";
 import { DescriptionPanel } from "./description-panel";
 import { canFetchDescription } from "@/lib/jobs/posting";
 import { sourceBadge } from "@/lib/jobs/sources/badges";
@@ -64,6 +65,13 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       .select("is_template")
       .eq("user_id", user.id)
       .then((r) => (r.error ? [] : ((r.data || []) as { is_template: boolean }[]))),
+    supabase
+      .from("interview_preps")
+      .select("stories, topics, questions")
+      .eq("user_id", user.id)
+      .eq("job_id", id)
+      .maybeSingle()
+      .then((r) => (r.error || !r.data ? null : (r.data as unknown as PrepView))),
   ]);
   const [job, vault, analysisRow] = await Promise.all([
     getJob(supabase, id),
@@ -90,7 +98,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
     job.posted_at,
     (sameCompany || []).filter((j) => j.id !== job.id && repostKey(job.company, j.title as string) === key).map((j) => j.posted_at as string | null)
   );
-  const [letterRow, samples] = await letterPromise;
+  const [letterRow, samples, prep] = await letterPromise;
   const letter: CoverLetterRow | null = letterRow
     ? {
         focus: letterRow.focus as string,
@@ -373,6 +381,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         hasTemplate={samples.some((s) => s.is_template)}
         hasDescription={hasDescription}
       />
+      <InterviewPrepCard jobId={job.id} prep={prep} hasDescription={hasDescription} />
       <Card>
         <CardHeader
           title="Application answers"

@@ -4,13 +4,14 @@ import { loadVaultSnapshot, vaultIsEmpty } from "@/lib/db/vault";
 import type { MasterResumeRow } from "@/lib/types";
 import { VaultView } from "./view";
 import type { SampleSummary } from "./sections/letters";
+import { storyBank, type CheckedStory } from "@/lib/interview/prep";
 
 export const metadata: Metadata = { title: "Career Vault" };
 
 export default async function VaultPage() {
   const user = await requireUser();
   const supabase = await createClient();
-  const [vault, masterRes, samplesRes] = await Promise.all([
+  const [vault, masterRes, samplesRes, prepsRes] = await Promise.all([
     loadVaultSnapshot(supabase, user.id),
     supabase
       .from("master_resumes")
@@ -25,7 +26,23 @@ export default async function VaultPage() {
       .select("id, title, content, template_base64, is_template, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("interview_preps")
+      .select("job_id, stories, jobs(title, company)")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false }),
   ]);
+  // Before migration 0012 the table doesn't exist; the bank is then empty.
+  const stories = storyBank(
+    (prepsRes.error ? [] : prepsRes.data || []).map((p) => {
+      const job = p.jobs as unknown as { title: string; company: string } | null;
+      return {
+        jobId: p.job_id as string,
+        label: job ? `${job.company}: ${job.title}` : "A job",
+        stories: (p.stories as CheckedStory[]) ?? [],
+      };
+    })
+  );
   const master = (masterRes.data as MasterResumeRow | null) ?? null;
   const pendingFacts = vault.facts.filter((f) => f.status === "pending").length;
   // Before migration 0011 the table doesn't exist; the tab then just shows no letters.
@@ -54,6 +71,7 @@ export default async function VaultPage() {
         pendingFacts={pendingFacts}
         isEmpty={vaultIsEmpty(vault)}
         samples={samples}
+        stories={stories}
       />
     </div>
   );
