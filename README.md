@@ -42,6 +42,9 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
   same skill and number checks; contact details are stripped before anything reaches the AI. The
   .docx is built inside one of your own letters, so the header, fonts and spacing match what you
   already send. Pick a focus (why it fits, problems you'd solve, how you work) and a tone.
+- **Pipeline:** analyze every saved job in one go. The free match score skips obvious mismatches
+  first, descriptions are fetched from the job board where possible, and the results are ranked
+  by verdict.
 - **Applications + alerts:** a kanban/table pipeline with CSV import, and optional Discord alerts
   when new internships matching your filters appear.
 
