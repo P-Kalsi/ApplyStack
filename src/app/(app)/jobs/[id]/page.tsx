@@ -14,6 +14,7 @@ import { displaySkill, timeAgo } from "@/lib/utils";
 import { AnalyzeButton } from "./analyze-button";
 import { TailorButton } from "./tailor-button";
 import { OpenCheckButton } from "./open-check-button";
+import { CoverLetterCard, type CoverLetterRow } from "./cover-letter";
 import { DescriptionPanel } from "./description-panel";
 import { canFetchDescription } from "@/lib/jobs/posting";
 import { sourceBadge } from "@/lib/jobs/sources/badges";
@@ -48,6 +49,21 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
     .order("updated_at", { ascending: false })
     .limit(20)
     .then((r) => (r.error ? [] : ((r.data || []) as { id: string; question: string; answer: string }[])));
+  // Cover letter + how many past letters you've saved (both empty before migration 0011).
+  const letterPromise = Promise.all([
+    supabase
+      .from("cover_letters")
+      .select("focus, tone, recipient, greeting, paragraphs, issues, gaps, fact_ids, model, updated_at")
+      .eq("user_id", user.id)
+      .eq("job_id", id)
+      .maybeSingle()
+      .then((r) => (r.error ? null : r.data)),
+    supabase
+      .from("writing_samples")
+      .select("is_template")
+      .eq("user_id", user.id)
+      .then((r) => (r.error ? [] : ((r.data || []) as { is_template: boolean }[]))),
+  ]);
   const [job, vault, analysisRow] = await Promise.all([
     getJob(supabase, id),
     loadVaultSnapshot(supabase, user.id),
@@ -62,6 +78,21 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   if (!job) notFound();
 
   const answers = await answersPromise;
+  const [letterRow, samples] = await letterPromise;
+  const letter: CoverLetterRow | null = letterRow
+    ? {
+        focus: letterRow.focus as string,
+        tone: letterRow.tone as string,
+        recipient: (letterRow.recipient as string[]) ?? [],
+        greeting: letterRow.greeting as string,
+        paragraphs: (letterRow.paragraphs as string[]) ?? [],
+        issues: (letterRow.issues as string[]) ?? [],
+        gaps: (letterRow.gaps as string[]) ?? [],
+        fact_count: ((letterRow.fact_ids as string[]) ?? []).length,
+        model: (letterRow.model as string | null) ?? null,
+        updated_at: letterRow.updated_at as string,
+      }
+    : null;
   const match = computeMatch(job, vault);
   const analysis = (analysisRow?.analysis ?? null) as JobAnalysis | null;
   const report = (analysisRow?.match_report ?? null) as MatchReport | null;
@@ -323,6 +354,13 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           </div>
         )}
       </Card>
+      <CoverLetterCard
+        jobId={job.id}
+        letter={letter}
+        samples={samples.length}
+        hasTemplate={samples.some((s) => s.is_template)}
+        hasDescription={hasDescription}
+      />
       <Card>
         <CardHeader
           title="Application answers"

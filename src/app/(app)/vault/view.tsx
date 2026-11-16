@@ -9,6 +9,7 @@ import { ProjectsEditor } from "./sections/projects";
 import { SkillsEditor } from "./sections/skills";
 import { FactsEditor } from "./sections/facts";
 import { ResumeEditor } from "./sections/resume";
+import { LettersEditor, type SampleSummary } from "./sections/letters";
 import { VaultOverview } from "./sections/overview";
 import { VaultTabs } from "./tabs";
 
@@ -20,6 +21,7 @@ export const VAULT_TABS = [
   { key: "skills", label: "Technical Skills" },
   { key: "facts", label: "Fact Bank" },
   { key: "resume", label: "Master Resume" },
+  { key: "letters", label: "Cover Letters" },
 ] as const;
 
 type TabKey = (typeof VAULT_TABS)[number]["key"];
@@ -35,11 +37,13 @@ export function VaultView({
   master,
   pendingFacts,
   isEmpty,
+  samples,
 }: {
   vault: VaultSnapshot;
   master: MasterResumeRow | null;
   pendingFacts: number;
   isEmpty: boolean;
+  samples: SampleSummary[];
 }) {
   const params = useSearchParams();
   const tab: TabKey = VAULT_TABS.find((t) => t.key === params.get("tab"))?.key ?? "overview";
@@ -77,6 +81,7 @@ export function VaultView({
           <FactsEditor facts={vault.facts} experiences={vault.experiences} projects={vault.projects} />
         ) : null}
         {tab === "resume" ? <ResumeEditor master={master} pendingFacts={pendingFacts} /> : null}
+        {tab === "letters" ? <LettersEditor samples={samples} /> : null}
       </TabPanel>
       </div>
     </>

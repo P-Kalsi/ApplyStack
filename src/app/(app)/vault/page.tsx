@@ -3,13 +3,14 @@ import { createClient, requireUser } from "@/lib/supabase/server";
 import { loadVaultSnapshot, vaultIsEmpty } from "@/lib/db/vault";
 import type { MasterResumeRow } from "@/lib/types";
 import { VaultView } from "./view";
+import type { SampleSummary } from "./sections/letters";
 
 export const metadata: Metadata = { title: "Career Vault" };
 
 export default async function VaultPage() {
   const user = await requireUser();
   const supabase = await createClient();
-  const [vault, masterRes] = await Promise.all([
+  const [vault, masterRes, samplesRes] = await Promise.all([
     loadVaultSnapshot(supabase, user.id),
     supabase
       .from("master_resumes")
@@ -19,9 +20,23 @@ export default async function VaultPage() {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("writing_samples")
+      .select("id, title, content, template_base64, is_template, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
   ]);
   const master = (masterRes.data as MasterResumeRow | null) ?? null;
   const pendingFacts = vault.facts.filter((f) => f.status === "pending").length;
+  // Before migration 0011 the table doesn't exist; the tab then just shows no letters.
+  const samples: SampleSummary[] = (samplesRes.error ? [] : samplesRes.data || []).map((s) => ({
+    id: s.id as string,
+    title: s.title as string,
+    words: String(s.content || "").split(/\s+/).filter(Boolean).length,
+    canTemplate: Boolean(s.template_base64),
+    isTemplate: Boolean(s.is_template),
+    created_at: s.created_at as string,
+  }));
 
   return (
     <div className="space-y-5">
@@ -33,7 +48,13 @@ export default async function VaultPage() {
       </div>
 
       {/* Tabs switch in the browser (the whole vault is already loaded). */}
-      <VaultView vault={vault} master={master} pendingFacts={pendingFacts} isEmpty={vaultIsEmpty(vault)} />
+      <VaultView
+        vault={vault}
+        master={master}
+        pendingFacts={pendingFacts}
+        isEmpty={vaultIsEmpty(vault)}
+        samples={samples}
+      />
     </div>
   );
 }

@@ -37,6 +37,11 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
 - **Answers:** drafts for screening questions ("Explain how you developed this skill", skill
   ratings, years of experience) that fit the character limit and cite your facts. Questions it
   can't answer truthfully, like work authorization, are left to you.
+- **Cover letters in your voice:** add your past letters to the Career Vault and new letters copy
+  their voice and structure (never their claims). Every paragraph cites your facts and passes the
+  same skill and number checks; contact details are stripped before anything reaches the AI. The
+  .docx is built inside one of your own letters, so the header, fonts and spacing match what you
+  already send. Pick a focus (why it fits, problems you'd solve, how you work) and a tone.
 - **Applications + alerts:** a kanban/table pipeline with CSV import, and optional Discord alerts
   when new internships matching your filters appear.
 
