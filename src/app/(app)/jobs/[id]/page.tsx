@@ -19,6 +19,8 @@ import { sourceBadge } from "@/lib/jobs/sources/badges";
 import { canonicalSkill, extractSkills, guessSkillGroup } from "@/lib/jobs/skills";
 import { tidyKeywordEvidence } from "@/lib/ai/keywords";
 import { KeywordEvidence } from "./keyword-evidence";
+import { postingSignals, type PostingSignal } from "@/lib/jobs/posting-signals";
+import { computeVerdict, type Verdict } from "@/lib/matching/verdict";
 
 export const metadata: Metadata = { title: "Job details" };
 
@@ -64,6 +66,11 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
   const paragraphs = (job.description_text || "").split(/\n{2,}/).filter(Boolean);
   const hasDescription = paragraphs.length > 0;
+  const signals = postingSignals(job);
+  const verdict =
+    analysis && report
+      ? computeVerdict(report, analysis, signals, (job.description_text || "").trim().length)
+      : null;
 
   return (
     <div className="space-y-5">
@@ -115,6 +122,8 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           ) : null}
         </div>
       </div>
+
+      {signals.length ? <PostingChecks signals={signals} /> : null}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Left: description */}
@@ -267,6 +276,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             hasDescription ? <AnalyzeButton jobId={job.id} hasAnalysis={Boolean(analysisRow)} /> : undefined
           }
         />
+        {verdict ? <VerdictPanel verdict={verdict} /> : null}
         {analysis && report ? (
           <div className="grid grid-cols-1 gap-4 px-4 py-3 md:grid-cols-2">
             <div className="space-y-3 text-xs">
@@ -344,6 +354,54 @@ function AnalysisList({ label, items }: { label: string; items: string[] }) {
       <ul className="list-disc space-y-0.5 pl-4 text-ink">
         {items.slice(0, 8).map((item, i) => (
           <li key={i}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const signalTone = { blocker: "bad", caution: "warn", info: "neutral" } as const;
+
+/** Facts about the posting itself (age, still listed, sponsorship...), separate from your match. */
+function PostingChecks({ signals }: { signals: PostingSignal[] }) {
+  return (
+    <Card>
+      <CardHeader title="Posting checks" description="About the posting itself, not your fit. Signals to check, not verdicts." />
+      <ul className="divide-y divide-line px-4">
+        {signals.map((s) => (
+          <li key={s.id} className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-start sm:gap-3">
+            <Badge tone={signalTone[s.level]} className="self-start">
+              {s.label}
+            </Badge>
+            <div className="min-w-0 space-y-0.5 text-xs">
+              <p className="text-ink-muted">{s.detail}</p>
+              {s.quote ? <p className="italic text-ink-faint">“{s.quote}”</p> : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+const verdictTone = { apply: "good", consider: "warn", skip: "bad", check: "bad" } as const;
+const confidenceLabel = { high: "High", medium: "Medium", low: "Low" } as const;
+
+/** Apply / consider / skip, read from the guarded score with evidence caps. Advice only. */
+function VerdictPanel({ verdict }: { verdict: Verdict }) {
+  return (
+    <div className="space-y-2 border-b border-line px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone={verdictTone[verdict.decision]} className="text-xs">
+          {verdict.headline}
+        </Badge>
+        <span className="text-2xs text-ink-faint" title={verdict.confidenceNote}>
+          Evidence confidence: {confidenceLabel[verdict.confidence]} · {verdict.confidenceNote}
+        </span>
+      </div>
+      <ul className="list-disc space-y-0.5 pl-4 text-xs text-ink-muted">
+        {verdict.reasons.map((r, i) => (
+          <li key={i}>{r}</li>
         ))}
       </ul>
     </div>

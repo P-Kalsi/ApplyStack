@@ -23,6 +23,12 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
 - **AI job analysis:** requirements, ATS keywords and a match score, with each keyword marked
   verified, related or missing based on your Career Vault. If you've done something it marks
   missing, "I've done this" adds it to your fact bank for review.
+- **Verdict + posting checks:** an Apply / Consider / Skip verdict read from the guarded score.
+  A match that rests on "related" rather than proven keywords, or misses a stated requirement,
+  can't reach Apply, and the evidence confidence is shown separately. Posting checks flag postings
+  that are stale, no longer listed, have no visa sponsorship, need citizenship or clearance, may be
+  unpaid, or ask applicants for a fee. Both ideas are adapted from
+  [career-ops](https://github.com/career-ops-hq/career-ops) (MIT).
 - **Resume tailoring:** upload your Word resume (or LaTeX); ApplyStack rewrites and reorders
   bullets for the job and returns the same file with your formatting untouched. Every change
   shows its reason and the facts it relies on before you accept it.
