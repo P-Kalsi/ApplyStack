@@ -85,7 +85,7 @@ export function postingSignals(job: PostingInput, now: Date = new Date()): Posti
       id: "closed",
       level: "blocker",
       label: "No longer listed",
-      detail: "This posting has dropped out of its source feed, so it has probably closed. Check the company's careers page before tailoring.",
+      detail: "The company's job board or feed no longer lists it, so it has probably closed. Check their careers page before tailoring.",
     });
   }
 

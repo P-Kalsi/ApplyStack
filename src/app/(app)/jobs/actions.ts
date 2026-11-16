@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient, requireUser } from "@/lib/supabase/server";
-import { explainDbError, getJob } from "@/lib/db/jobs";
+import { explainDbError, getJob, loadSources } from "@/lib/db/jobs";
 import { buildNormalizedJob, descriptionPatch } from "@/lib/jobs/normalize";
 import { fetchPosting, type FetchedPosting } from "@/lib/jobs/posting";
+import { boardPostingUrl, checkLiveness, type Liveness } from "@/lib/jobs/liveness";
 import { canonicalJobUrl, MAX_CAPTURE_CHARS, siteOf, type ExtractedJob } from "@/lib/jobs/page-import";
 import { extractJobFromPage } from "@/lib/ai/page-extract";
 import { canonicalSkill, extractSkills } from "@/lib/jobs/skills";
@@ -115,6 +116,33 @@ export async function fetchJobDescription(jobId: string): Promise<AnalyzeResult>
     return { ok: true, message: "Description fetched." };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "Couldn't fetch the description." };
+  }
+}
+
+/**
+ * Ask the company's job board whether this posting is still open, and record
+ * the answer (is_open) so the posting checks and verdict reflect it.
+ */
+export async function checkJobOpen(jobId: string): Promise<AnalyzeResult & { status?: Liveness }> {
+  try {
+    const user = await requireUser();
+    const supabase = await createClient();
+    const job = await getJob(supabase, jobId);
+    if (!job) return { ok: false, message: "Job not found." };
+    const url = boardPostingUrl(job, await loadSources(supabase, user.id).catch(() => []));
+    const result = await checkLiveness(url ?? job.url);
+    if (result.status !== "unknown") {
+      const isOpen = result.status === "open";
+      if (job.is_open !== isOpen) {
+        const { error } = await supabase.from("jobs").update({ is_open: isOpen }).eq("id", job.id);
+        if (error) throw new Error(explainDbError(error.message));
+      }
+      revalidatePath(`/jobs/${job.id}`);
+      revalidatePath("/discover");
+    }
+    return { ok: result.status !== "unknown", status: result.status, message: result.message };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Couldn't check the posting." };
   }
 }
 

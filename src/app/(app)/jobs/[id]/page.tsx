@@ -13,6 +13,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { displaySkill, timeAgo } from "@/lib/utils";
 import { AnalyzeButton } from "./analyze-button";
 import { TailorButton } from "./tailor-button";
+import { OpenCheckButton } from "./open-check-button";
 import { DescriptionPanel } from "./description-panel";
 import { canFetchDescription } from "@/lib/jobs/posting";
 import { sourceBadge } from "@/lib/jobs/sources/badges";
@@ -23,6 +24,9 @@ import { postingSignals, type PostingSignal } from "@/lib/jobs/posting-signals";
 import { computeVerdict, type Verdict } from "@/lib/matching/verdict";
 
 export const metadata: Metadata = { title: "Job details" };
+
+/** Sources whose postings can be checked through the board API. */
+const BOARD_KINDS = new Set(["greenhouse", "lever", "ashby"]);
 
 const workModeLabel: Record<string, string> = {
   remote: "Remote",
@@ -108,6 +112,9 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               <ScoreBadge score={match.overall} label="Your deterministic match score" />
               <TailorButton jobId={job.id} />
             </>
+          ) : null}
+          {canFetchDescription(job.url) || (BOARD_KINDS.has(job.source) && job.source_id) ? (
+            <OpenCheckButton jobId={job.id} />
           ) : null}
           {job.url ? (
             <a
