@@ -33,6 +33,7 @@ export default async function SettingsPage() {
   const envSources = sourcesFromEnv({
     GREENHOUSE_BOARDS: process.env.GREENHOUSE_BOARDS,
     LEVER_SITES: process.env.LEVER_SITES,
+    ASHBY_BOARDS: process.env.ASHBY_BOARDS,
   });
 
   return (
@@ -80,7 +81,7 @@ export default async function SettingsPage() {
       <Card>
         <CardHeader
           title="Company boards (optional)"
-          description="Public Greenhouse Job Board and Lever Postings APIs. Add the board token from boards.greenhouse.io/<token> or the site name from jobs.lever.co/<site>."
+          description="Public Greenhouse, Lever and Ashby job board APIs. Start from a ready-made list, or add a board token from boards.greenhouse.io/<token>, jobs.lever.co/<site> or jobs.ashbyhq.com/<board>."
         />
         <SourcesManager sources={(sources || []) as JobSourceRow[]} envSources={envSources} />
       </Card>

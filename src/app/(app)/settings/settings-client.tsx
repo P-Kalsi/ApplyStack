@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Confirm } from "@/components/ui/confirm";
 import { Input, Label, Select } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import { addJobSource, deleteJobSource, saveProfile, toggleJobSource } from "./actions";
+import { addBoardPreset, addJobSource, deleteJobSource, saveProfile, toggleJobSource } from "./actions";
+import { BOARD_PRESETS } from "@/lib/jobs/presets";
 
 export function ProfileForm({
   profile,
@@ -85,8 +86,54 @@ export function SourcesManager({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
+  const [presetBusy, setPresetBusy] = useState<string | null>(null);
+  const have = new Set(sources.map((s) => `${s.kind}:${s.token.toLowerCase()}`));
+
   return (
     <div className="space-y-3 px-4 py-3">
+      <div>
+        <h3 className="mb-1.5 text-xs font-medium text-ink-muted">Quick start: add a ready-made list</h3>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {BOARD_PRESETS.map((p) => {
+            const added = p.boards.filter((b) => have.has(`${b.kind}:${b.token}`)).length;
+            const done = added === p.boards.length;
+            return (
+              <div key={p.id} className="flex flex-col gap-1.5 rounded-md border border-line p-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-ink">{p.label}</p>
+                  <span className="text-2xs tabular-nums text-ink-faint">
+                    {added ? `${added}/${p.boards.length} added` : `${p.boards.length} companies`}
+                  </span>
+                </div>
+                <p className="text-xs text-ink-muted">{p.description}</p>
+                <p className="line-clamp-2 text-2xs text-ink-faint" title={p.boards.map((b) => b.label).join(", ")}>
+                  {p.boards.map((b) => b.label).join(", ")}
+                </p>
+                <Button
+                  size="sm"
+                  variant={done ? "ghost" : "secondary"}
+                  className="self-start"
+                  disabled={done}
+                  loading={presetBusy === p.id}
+                  onClick={async () => {
+                    setPresetBusy(p.id);
+                    try {
+                      const res = await addBoardPreset(p.id);
+                      toast(res.message, res.ok ? "success" : "error");
+                      if (res.ok) router.refresh();
+                    } finally {
+                      setPresetBusy(null);
+                    }
+                  }}
+                >
+                  {done ? "All added" : added ? "Add the rest" : "Add all"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <form
         action={async (fd) => {
           setBusy(true);
@@ -105,6 +152,7 @@ export function SourcesManager({
           <Select id="src-kind" name="kind" className="w-36">
             <option value="greenhouse">Greenhouse</option>
             <option value="lever">Lever</option>
+            <option value="ashby">Ashby</option>
           </Select>
         </div>
         <div>

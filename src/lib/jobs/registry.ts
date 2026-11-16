@@ -5,7 +5,7 @@
 import type { JobSourceRow } from "../types";
 
 export interface CompanySource {
-  kind: "greenhouse" | "lever";
+  kind: "greenhouse" | "lever" | "ashby";
   token: string;
   label?: string;
 }
@@ -20,12 +20,14 @@ function parseList(env: string | undefined): string[] {
 export function sourcesFromEnv(env: {
   GREENHOUSE_BOARDS?: string;
   LEVER_SITES?: string;
+  ASHBY_BOARDS?: string;
 }): CompanySource[] {
   return [
     ...parseList(env.GREENHOUSE_BOARDS).map(
       (token): CompanySource => ({ kind: "greenhouse", token })
     ),
     ...parseList(env.LEVER_SITES).map((token): CompanySource => ({ kind: "lever", token })),
+    ...parseList(env.ASHBY_BOARDS).map((token): CompanySource => ({ kind: "ashby", token })),
   ];
 }
 

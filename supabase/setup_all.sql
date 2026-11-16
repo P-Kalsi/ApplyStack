@@ -1,5 +1,5 @@
 -- ApplyStack: full database setup. Paste this whole file into Supabase → SQL Editor → Run.
--- Generated from migrations 0001-0009 (same content, in order). Run it ONCE, on a new, empty project.
+-- Generated from migrations 0001-0010 (same content, in order). Run it ONCE, on a new, empty project.
 -- Sample jobs are NOT included; they live in seed.sql and are fictional, so skip them for real use.
 
 
@@ -516,3 +516,12 @@ alter table public.job_analyses
   drop constraint if exists job_analyses_engine_check;
 alter table public.job_analyses
   add constraint job_analyses_engine_check check (engine ~ '^[a-z][a-z0-9_]{1,30}$');
+
+-- ===== migrations/0010_ashby_boards.sql =====
+
+-- Company boards can be Ashby job boards too (jobs.ashbyhq.com/{org}).
+
+alter table public.job_sources
+  drop constraint if exists job_sources_kind_check;
+alter table public.job_sources
+  add constraint job_sources_kind_check check (kind in ('greenhouse', 'lever', 'ashby'));

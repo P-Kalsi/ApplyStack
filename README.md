@@ -15,8 +15,10 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
 ## What it does
 
 - **Discover:** one paged board over several sources: the Simplify internship list, public
-  Greenhouse and Lever job boards, and the Adzuna search API. Filters for location, distance,
+  Greenhouse, Lever and Ashby job boards, and the Adzuna search API. Filters for location, distance,
   remote, role type and date. Sources are plugins, so adding another job API is one file.
+  Settings has ready-made board lists (big intern programs, Canadian tech, AI labs, dev tools),
+  so you can scan 70+ companies without looking up board tokens.
 - **Import from anywhere:** a bookmarklet and a paste box turn a LinkedIn, Indeed or company
   posting you're looking at into a job in ApplyStack. Nothing is scraped; you send the page
   you already have open.
@@ -151,6 +153,7 @@ cp .env.example .env
 | `APPLYSTACK_CONFIG` | no | Where the backend settings file lives (default `./applystack.config.json`) |
 | `GREENHOUSE_BOARDS` | no | Comma-separated Greenhouse board tokens to ingest |
 | `LEVER_SITES` | no | Comma-separated Lever site names to ingest |
+| `ASHBY_BOARDS` | no | Comma-separated Ashby job board names to ingest |
 
 Job sources can also be managed per-user in **Settings → Job sources**.
 

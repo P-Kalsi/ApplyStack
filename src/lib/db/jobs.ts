@@ -45,6 +45,7 @@ export async function loadSources(supabase: SupabaseClient, userId: string): Pro
     sourcesFromEnv({
       GREENHOUSE_BOARDS: process.env.GREENHOUSE_BOARDS,
       LEVER_SITES: process.env.LEVER_SITES,
+      ASHBY_BOARDS: process.env.ASHBY_BOARDS,
     }),
     (data || []) as Pick<JobSourceRow, "kind" | "token" | "label" | "enabled">[]
   );

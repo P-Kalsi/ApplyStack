@@ -263,7 +263,7 @@ export interface ApplicationRow {
 export interface JobSourceRow {
   id: string;
   user_id: string;
-  kind: "greenhouse" | "lever";
+  kind: "greenhouse" | "lever" | "ashby";
   token: string;
   label: string | null;
   enabled: boolean;

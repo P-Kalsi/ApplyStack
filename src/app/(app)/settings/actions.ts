@@ -14,6 +14,7 @@ import { FEED_CATEGORIES, FEED_REGIONS } from "@/lib/jobs/adapters/simplify";
 import { loadFeedSettings, saveFeedSettings } from "@/lib/jobs/feed-settings";
 import { resetAlertBaseline, runAlertCheck, sendTestAlert } from "@/lib/alerts/discord";
 import { clearSourceCache } from "@/lib/jobs/sources/cache";
+import { findPreset } from "@/lib/jobs/presets";
 
 export interface ActionResult {
   ok: boolean;
@@ -57,12 +58,12 @@ export async function addJobSource(fd: FormData): Promise<ActionResult> {
     const supabase = await createClient();
     const kind = str(fd, "kind");
     const token = str(fd, "token").toLowerCase();
-    if (kind !== "greenhouse" && kind !== "lever") return { ok: false, message: "Invalid source type." };
+    if (kind !== "greenhouse" && kind !== "lever" && kind !== "ashby") return { ok: false, message: "Invalid source type." };
     if (!token || !/^[a-z0-9-]+$/.test(token)) {
       return {
         ok: false,
         message:
-          "Enter just the board token / site name (lowercase letters, digits, hyphens) — e.g. from boards.greenhouse.io/<token> or jobs.lever.co/<site>.",
+          "Enter just the board token / site name (lowercase letters, digits, hyphens) — e.g. from boards.greenhouse.io/<token> or jobs.lever.co/<site> or jobs.ashbyhq.com/<board>.",
       };
     }
     const { error } = await supabase.from("job_sources").insert({
@@ -74,12 +75,57 @@ export async function addJobSource(fd: FormData): Promise<ActionResult> {
     });
     if (error) {
       if (error.code === "23505") return { ok: false, message: "That source is already registered." };
+      if (/job_sources_kind_check/.test(error.message)) {
+        return { ok: false, message: "Ashby boards need a database update: run supabase/migrations/0010_ashby_boards.sql in the Supabase SQL Editor." };
+      }
       throw new Error(error.message);
     }
     revalidatePath("/settings");
     return { ok: true, message: `Added ${kind} source "${token}". Pick "Company boards" (or All sources) on Discover to see its jobs.` };
   } catch (err) {
     return fail(err, "Failed to add source.");
+  }
+}
+
+/** Add every board in a preset list; boards you already have are left as they are. */
+export async function addBoardPreset(presetId: string): Promise<ActionResult> {
+  try {
+    const preset = findPreset(presetId);
+    if (!preset) return { ok: false, message: "Unknown preset." };
+    const user = await requireUser();
+    const supabase = await createClient();
+    const { data: existing, error: readError } = await supabase
+      .from("job_sources")
+      .select("kind, token")
+      .eq("user_id", user.id);
+    if (readError) throw new Error(readError.message);
+    const have = new Set((existing || []).map((s) => `${s.kind}:${String(s.token).toLowerCase()}`));
+    const rows = preset.boards
+      .filter((b) => !have.has(`${b.kind}:${b.token}`))
+      .map((b) => ({ user_id: user.id, kind: b.kind, token: b.token, label: b.label, enabled: true }));
+    if (rows.length) {
+      const { error } = await supabase
+        .from("job_sources")
+        .upsert(rows, { onConflict: "user_id,kind,token", ignoreDuplicates: true });
+      if (error) {
+        if (/job_sources_kind_check/.test(error.message)) {
+          throw new Error("Ashby boards need a database update: run supabase/migrations/0010_ashby_boards.sql in the Supabase SQL Editor.");
+        }
+        throw new Error(error.message);
+      }
+    }
+    clearSourceCache("boards:");
+    revalidatePath("/settings");
+    revalidatePath("/discover");
+    const skipped = preset.boards.length - rows.length;
+    return {
+      ok: true,
+      message: rows.length
+        ? `Added ${rows.length} ${preset.label} board${rows.length === 1 ? "" : "s"}${skipped ? ` (${skipped} you already had)` : ""}. Pick "Company boards" on Discover to see their jobs.`
+        : `You already have every ${preset.label} board.`,
+    };
+  } catch (err) {
+    return fail(err, "Failed to add the preset.");
   }
 }
 
