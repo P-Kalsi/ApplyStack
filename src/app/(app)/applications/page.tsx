@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { createClient, requireUser } from "@/lib/supabase/server";
 import type { ApplicationRow } from "@/lib/types";
+import { followUpsDue } from "@/lib/applications/followups";
 import { ApplicationsClient, type VersionOption } from "./applications-client";
+import { FollowUpsCard } from "./followups";
 
 export const metadata: Metadata = { title: "Applications" };
 
@@ -9,7 +11,7 @@ export default async function ApplicationsPage() {
   const user = await requireUser();
   const supabase = await createClient();
 
-  const [{ data: apps, error }, { data: versions }] = await Promise.all([
+  const [{ data: apps, error }, { data: versions }, { data: profile }] = await Promise.all([
     supabase
       .from("applications")
       .select("*")
@@ -20,13 +22,19 @@ export default async function ApplicationsPage() {
       .select("id, name")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
   if (error) throw new Error(error.message);
 
+  const applications = (apps || []) as ApplicationRow[];
+  // "Today" on this computer, not UTC, so a follow-up isn't due a day early in the evening.
+  const today = new Date().toLocaleDateString("en-CA");
+  const { due, upcoming } = followUpsDue(applications, today, (profile?.full_name as string | null) ?? "");
+
   return (
-    <ApplicationsClient
-      applications={(apps || []) as ApplicationRow[]}
-      versions={(versions || []) as VersionOption[]}
-    />
+    <div className="space-y-5">
+      <FollowUpsCard due={due} upcoming={upcoming} />
+      <ApplicationsClient applications={applications} versions={(versions || []) as VersionOption[]} />
+    </div>
   );
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient, requireUser } from "@/lib/supabase/server";
 import { APPLICATION_STATUSES, type ApplicationStatus } from "@/lib/types";
 import { dedupeKey, importApplicationsCsv } from "@/lib/applications/csv-import";
+import { addDays, followUpNote, SNOOZED } from "@/lib/applications/followups";
 
 export interface ActionResult {
   ok: boolean;
@@ -143,5 +144,61 @@ export async function importApplications(fd: FormData): Promise<ActionResult> {
     return { ok: true, message: parts.join(" · ") + "." };
   } catch (err) {
     return fail(err, "Import failed.");
+  }
+}
+
+/** Today's date on this computer (YYYY-MM-DD), not UTC. */
+function localToday(): string {
+  return new Date().toLocaleDateString("en-CA");
+}
+
+/**
+ * Record that you sent a follow-up: adds a "Followed up YYYY-MM-DD" line to
+ * the notes (the cadence counts these) and clears a reminder date you'd set.
+ */
+export async function markFollowedUp(id: string): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const supabase = await createClient();
+    const { data, error: readError } = await supabase
+      .from("applications")
+      .select("notes, next_action_date")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+    if (readError) throw new Error(readError.message);
+    const today = localToday();
+    const notes = [String(data?.notes ?? "").trimEnd(), followUpNote(today)].filter(Boolean).join("\n");
+    const update: Record<string, unknown> = { notes };
+    if (data?.next_action_date && data.next_action_date <= today) {
+      update.next_action_date = null;
+      update.next_action = null;
+    }
+    const { error } = await supabase.from("applications").update(update).eq("id", id).eq("user_id", user.id);
+    if (error) throw new Error(error.message);
+    revalidatePath("/applications");
+    return { ok: true, message: "Marked as followed up." };
+  } catch (err) {
+    return fail(err, "Couldn't update the application.");
+  }
+}
+
+/** Push this application's follow-up back by some days (sets your next-action date). */
+export async function snoozeFollowUp(id: string, days: number): Promise<ActionResult> {
+  try {
+    if (!Number.isInteger(days) || days < 1 || days > 60) return { ok: false, message: "Pick 1 to 60 days." };
+    const user = await requireUser();
+    const supabase = await createClient();
+    const date = addDays(localToday(), days);
+    const { error } = await supabase
+      .from("applications")
+      .update({ next_action_date: date, next_action: SNOOZED })
+      .eq("id", id)
+      .eq("user_id", user.id);
+    if (error) throw new Error(error.message);
+    revalidatePath("/applications");
+    return { ok: true, message: `Snoozed until ${date}.` };
+  } catch (err) {
+    return fail(err, "Couldn't snooze it.");
   }
 }

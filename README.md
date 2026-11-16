@@ -47,6 +47,9 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
   by verdict.
 - **Applications + alerts:** a kanban/table pipeline with CSV import, and optional Discord alerts
   when new internships matching your filters appear.
+- **Follow-ups:** Applications shows which applications are due a nudge (a week after applying,
+  again a week later, and after an assessment or interview), each with a short draft to copy.
+  Nothing is sent for you; mark it sent and the next one is scheduled.
 
 | AI job analysis with keyword evidence | Screening-question drafts |
 | --- | --- |
