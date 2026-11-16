@@ -21,7 +21,8 @@ import { sourceBadge } from "@/lib/jobs/sources/badges";
 import { canonicalSkill, extractSkills, guessSkillGroup } from "@/lib/jobs/skills";
 import { tidyKeywordEvidence } from "@/lib/ai/keywords";
 import { KeywordEvidence } from "./keyword-evidence";
-import { postingSignals, type PostingSignal } from "@/lib/jobs/posting-signals";
+import { postingSignals, repostDates, type PostingSignal } from "@/lib/jobs/posting-signals";
+import { repostKey } from "@/lib/applications/patterns";
 import { computeVerdict, type Verdict } from "@/lib/matching/verdict";
 
 export const metadata: Metadata = { title: "Job details" };
@@ -78,6 +79,17 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   if (!job) notFound();
 
   const answers = await answersPromise;
+  // Earlier listings of the same title at this company (repost detection).
+  const { data: sameCompany } = await supabase
+    .from("jobs")
+    .select("id, title, posted_at")
+    .eq("company_slug", job.company_slug)
+    .limit(300);
+  const key = repostKey(job.company, job.title);
+  const earlier = repostDates(
+    job.posted_at,
+    (sameCompany || []).filter((j) => j.id !== job.id && repostKey(job.company, j.title as string) === key).map((j) => j.posted_at as string | null)
+  );
   const [letterRow, samples] = await letterPromise;
   const letter: CoverLetterRow | null = letterRow
     ? {
@@ -101,7 +113,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
   const paragraphs = (job.description_text || "").split(/\n{2,}/).filter(Boolean);
   const hasDescription = paragraphs.length > 0;
-  const signals = postingSignals(job);
+  const signals = postingSignals(job, new Date(), earlier);
   const verdict =
     analysis && report
       ? computeVerdict(report, analysis, signals, (job.description_text || "").trim().length)

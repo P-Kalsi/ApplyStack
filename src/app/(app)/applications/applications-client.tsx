@@ -60,7 +60,12 @@ export function ApplicationsClient({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-title text-ink">Applications</h1>
-          <p className="mt-1 text-sm tabular-nums text-ink-muted">{applications.length} in your pipeline</p>
+          <p className="mt-1 text-sm tabular-nums text-ink-muted">
+            {applications.length} in your pipeline ·{" "}
+            <Link href="/applications/insights" className="font-medium text-accent hover:underline">
+              Insights
+            </Link>
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="isolate flex rounded-md border border-line-strong bg-surface-raised p-0.5" role="tablist">

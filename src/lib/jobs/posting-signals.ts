@@ -12,7 +12,7 @@ import type { JobRow } from "../types";
 export type SignalLevel = "blocker" | "caution" | "info";
 
 export interface PostingSignal {
-  id: "closed" | "stale" | "aging" | "no_sponsorship" | "citizenship" | "unpaid" | "fee" | "thin";
+  id: "closed" | "stale" | "aging" | "repost" | "no_sponsorship" | "citizenship" | "unpaid" | "fee" | "thin";
   level: SignalLevel;
   label: string;
   detail: string;
@@ -76,7 +76,25 @@ export function postingAgeDays(postedAt: string | null, now: Date = new Date()):
   return days >= 0 ? days : null;
 }
 
-export function postingSignals(job: PostingInput, now: Date = new Date()): PostingSignal[] {
+/**
+ * Earlier listings of the same title at the same company (see repostKey in
+ * applications/patterns.ts): their post dates. Only dates more than two weeks
+ * from this posting's count, so one job seen through two sources isn't a repost.
+ */
+export function repostDates(postedAt: string | null, others: (string | null)[]): string[] {
+  const own = postedAt ? Date.parse(postedAt) : NaN;
+  if (Number.isNaN(own)) return [];
+  const dates = others
+    .map((d) => (d ? Date.parse(d) : NaN))
+    .filter((t) => !Number.isNaN(t) && t < own && own - t > 14 * DAY_MS)
+    .sort((a, b) => a - b);
+  // Collapse listings posted within two weeks of each other into one.
+  const out: number[] = [];
+  for (const t of dates) if (!out.length || t - out[out.length - 1] > 14 * DAY_MS) out.push(t);
+  return out.map((t) => new Date(t).toISOString().slice(0, 10));
+}
+
+export function postingSignals(job: PostingInput, now: Date = new Date(), earlierListings: string[] = []): PostingSignal[] {
   const out: PostingSignal[] = [];
   const text = job.description_text || "";
 
@@ -103,6 +121,16 @@ export function postingSignals(job: PostingInput, now: Date = new Date()): Posti
       level: "info",
       label: `Posted ${age} days ago`,
       detail: "Over a month old. Internships often fill early, so apply soon if you want it.",
+    });
+  }
+
+  if (earlierListings.length) {
+    const n = earlierListings.length;
+    out.push({
+      id: "repost",
+      level: n >= 2 ? "caution" : "info",
+      label: n === 1 ? "Posted before" : `Reposted ${n} times`,
+      detail: `The same title at this company was listed before (first ${earlierListings[0]}). Reposts can mean a hard role to fill, a pipeline that's always open, or a listing nobody is hiring from. Worth asking about.`,
     });
   }
 

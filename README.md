@@ -50,6 +50,9 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
 - **Follow-ups:** Applications shows which applications are due a nudge (a week after applying,
   again a week later, and after an assessment or interview), each with a short draft to copy.
   Nothing is sent for you; mark it sent and the next one is scheduled.
+- **Insights:** your funnel, reply and advance rates by channel and by kind of role (small samples
+  flagged), requirements you keep missing across jobs you applied to, and applications gone quiet.
+  Job pages also flag a posting the company has listed before (repost detection).
 
 | AI job analysis with keyword evidence | Screening-question drafts |
 | --- | --- |
