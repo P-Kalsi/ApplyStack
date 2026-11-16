@@ -1,6 +1,6 @@
 // Discover URL parameters <-> query. Pure, shared by the page and the filter bar.
 
-import type { DiscoverQuery, SortKey, Workplace } from "./types";
+import type { Area, CareerLevel, DiscoverQuery, SortKey, Workplace } from "./types";
 
 export const DEFAULT_LOCATION = "Vancouver, BC";
 export const DEFAULT_RADIUS_KM = 25;
@@ -31,8 +31,10 @@ export function parseDiscoverParams(raw: Raw): DiscoverParams {
       q: (one(raw.q) || "").slice(0, 200),
       location: loc === undefined ? DEFAULT_LOCATION : loc.slice(0, 120),
       radiusKm: RADIUS_OPTIONS.includes(radius as never) ? radius : DEFAULT_RADIUS_KM,
+      area: (["city", "region", "country"].includes(one(raw.area) || "") ? one(raw.area) : "city") as Area,
       workplace: (["both", "local", "remote"].includes(work || "") ? work : "both") as Workplace,
-      internship: one(raw.internship) === "1",
+      usRemote: one(raw.usremote) === "1",
+      levels: parseLevels(one(raw.level), one(raw.internship)),
       categories: (one(raw.cats) || "").split(",").filter(Boolean).slice(0, 12),
       days: days > 0 && days <= 60 ? days : null,
       sort: (sort === "relevance" ? "relevance" : "newest") as SortKey,
@@ -41,6 +43,13 @@ export function parseDiscoverParams(raw: Raw): DiscoverParams {
     page: Number.isInteger(page) && page >= 1 ? Math.min(page, 1000) : 1,
     perPage: PER_PAGE_OPTIONS.includes(per as never) ? per : DEFAULT_PER_PAGE,
   };
+}
+
+/** "internship,early" -> levels; the old ?internship=1 link still means internships. */
+function parseLevels(level: string | undefined, legacy: string | undefined): CareerLevel[] {
+  const out = (level || "").split(",").filter((l): l is CareerLevel => l === "internship" || l === "early");
+  if (!out.length && legacy === "1") out.push("internship");
+  return [...new Set(out)];
 }
 
 /** Page numbers to show: 1 … p-2 p-1 [p] p+1 p+2 … last. */

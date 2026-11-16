@@ -81,21 +81,38 @@ export function inferWorkMode(location: string | null, text: string | null): Wor
   if (/remote/.test(loc)) return "remote";
   if (/hybrid/.test(loc)) return "hybrid";
   if (/on[- ]?site|in[- ]?office|in[- ]?person/.test(loc)) return "onsite";
-  if (/fully remote|100% remote|remote[- ]first/.test(body)) return "remote";
+  // The description only decides remote when the location says nothing:
+  // "remote-first company" text on a Toronto job doesn't make the job remote.
+  if (!loc.trim() && /fully remote|100% remote|remote[- ]first/.test(body)) return "remote";
   if (/hybrid/.test(body)) return "hybrid";
   if (/on[- ]?site|in[- ]?office|in[- ]?person/.test(body)) return "onsite";
   if (loc.trim().length > 0) return "onsite";
   return "unknown";
 }
 
+/** Titles that are never internships or early-career roles, whatever else they say ("Head of Early Career Recruiting"). */
+const SENIOR_TITLE = /\b(senior|sr\.?|staff|principal|lead|leader|manager|head|director|vp|vice president|chief|architect|recruit(?:er|ing)|coordinator|partner)\b/;
+const INTERN_TITLE = /\bintern(ship)?s?\b|\bco[- ]?op\b|\bstage\b|\bstagiaire\b|\bstudent\b|\bwork[- ]term\b/;
+const EARLY_TITLE =
+  /\bnew[- ]?grad(uate)?s?\b|\buniversity grad(uate)?\b|\b(recent )?graduate\b|\bearly[- ]career\b|\bcampus\b|\bentry[- ]level\b|\bjunior\b|\bjr\.?(?=\s)|\bapprentice(ship)?\b|\bgrad(uate)? program\b|\bresidency\b/;
+
 export function inferEmploymentType(title: string, text?: string | null): EmploymentType {
   const t = (title || "").toLowerCase();
-  if (/\bintern(ship)?\b|\bco[- ]?op\b|\bstage\b/.test(t)) return "internship";
-  if (/\bnew ?grad\b|\bgraduate\b|\bearly career\b|\bcampus\b/.test(t)) return "newgrad";
+  if (SENIOR_TITLE.test(t)) return /\bfull[- ]?time\b/.test(t) ? "fulltime" : "other";
+  if (INTERN_TITLE.test(t)) return "internship";
+  if (EARLY_TITLE.test(t)) return "newgrad";
   const body = (text || "").toLowerCase();
-  if (/\binternship\b|\bco[- ]?op\b/.test(body.slice(0, 600))) return "internship";
+  if (/\binternship\b|\bco[- ]?op (?:position|placement|term|student|program)\b/.test(body.slice(0, 600))) return "internship";
   if (/\bfull[- ]?time\b/.test(t)) return "fulltime";
   return "other";
+}
+
+/** Career level for the Discover filter: internship, early career (new grad, junior, entry level), or neither. */
+export function careerLevel(job: { title: string; employment_type: EmploymentType }): "internship" | "early" | null {
+  // Titles decide first, so jobs stored before the classifier improved are read the new way.
+  const fromTitle = inferEmploymentType(job.title, null);
+  const type = fromTitle !== "other" && fromTitle !== "fulltime" ? fromTitle : SENIOR_TITLE.test(job.title.toLowerCase()) ? "other" : job.employment_type;
+  return type === "internship" ? "internship" : type === "newgrad" ? "early" : null;
 }
 
 const CATEGORY_RULES: { category: JobCategory; re: RegExp }[] = [

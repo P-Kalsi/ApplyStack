@@ -9,12 +9,15 @@
 import { buildNormalizedJob, classifyCategories, decodeEntities, inferEmploymentType, inferWorkMode } from "../normalize";
 import { cached } from "./cache";
 import type { DiscoverQuery, JobSourcePlugin, SourceJob } from "./types";
+import { parseSearchPlace, PROVINCE_NAMES, STATE_NAMES } from "../geo";
 
 const api = () => (process.env.ADZUNA_API_URL || "https://api.adzuna.com/v1/api/jobs").replace(/\/+$/, "");
 const PAGE_TTL_MS = 15 * 60_000;
 const MAX_PER_REQUEST = 50;
 /** Words that mark internships and co-ops in titles and descriptions. */
 const INTERNSHIP_WORDS = "intern internship co-op coop student";
+/** Words that mark new-grad and early-career roles. */
+const EARLY_WORDS = "graduate grad junior entry-level";
 
 export interface AdzunaResult {
   id: string | number;
@@ -51,13 +54,21 @@ export function adzunaParams(q: DiscoverQuery, perPage: number): URLSearchParams
   const p = new URLSearchParams();
   p.set("results_per_page", String(Math.min(MAX_PER_REQUEST, Math.max(1, perPage))));
   if (q.q.trim()) p.set("what", q.q.trim());
-  if (q.internship) p.set("what_or", INTERNSHIP_WORDS);
-  if (q.workplace === "remote") {
+  const words = [q.levels.includes("internship") ? INTERNSHIP_WORDS : "", q.levels.includes("early") ? EARLY_WORDS : ""].filter(Boolean);
+  if (words.length) p.set("what_or", words.join(" "));
+  const search = parseSearchPlace(q.location);
+  if (q.workplace === "remote" || search.remote) {
     // Remote roles anywhere in the country.
     p.set("what_and", "remote");
-  } else if (q.location.trim()) {
-    p.set("where", q.location.trim());
-    p.set("distance", String(Math.max(1, Math.round(q.radiusKm))));
+  } else if (search.level !== "none") {
+    // Adzuna searches one country; "where" narrows it to a city (with a radius) or a province.
+    const level = search.level === "country" ? "country" : search.level === "region" && q.area === "city" ? "region" : q.area;
+    if (level === "city") {
+      p.set("where", q.location.trim());
+      p.set("distance", String(Math.max(1, Math.round(q.radiusKm))));
+    } else if (level === "region" && search.region) {
+      p.set("where", PROVINCE_NAMES[search.region] ?? STATE_NAMES[search.region] ?? search.region);
+    }
   }
   p.set("sort_by", q.sort === "relevance" && q.q.trim() ? "relevance" : "date");
   if (q.days) p.set("max_days_old", String(q.days));

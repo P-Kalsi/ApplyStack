@@ -1,47 +1,61 @@
 // Filtering and sorting for sources that publish a whole list. Pure, tested.
 
-import type { DiscoverQuery, SortKey, SourceJob } from "./types";
+import type { Area, DiscoverQuery, SortKey, SourceJob } from "./types";
+import { metroOf, parsePlace, parseSearchPlace, type Country, type Place, type SearchPlace } from "../geo";
+import { careerLevel } from "../normalize";
 
-/** Cities that count as "local" for a searched city (no geocoding needed). */
-const METROS: string[][] = [
-  ["vancouver", "burnaby", "richmond", "surrey", "coquitlam", "north vancouver", "west vancouver", "new westminster", "delta", "langley", "port coquitlam", "port moody", "maple ridge", "white rock"],
-  ["toronto", "mississauga", "markham", "brampton", "vaughan", "richmond hill", "oakville", "scarborough", "north york", "etobicoke", "pickering", "ajax", "thornhill", "concord"],
-  ["montreal", "montréal", "laval", "longueuil", "saint-laurent", "dorval"],
-  ["ottawa", "kanata", "gatineau", "nepean"],
-  ["waterloo", "kitchener", "cambridge", "guelph"],
-  ["calgary", "airdrie"],
-  ["edmonton", "st. albert", "sherwood park"],
-  ["victoria", "saanich", "langford"],
-  ["seattle", "bellevue", "redmond", "kirkland", "bothell"],
-  ["san francisco", "south san francisco", "oakland", "san mateo", "palo alto", "mountain view", "sunnyvale", "san jose", "menlo park", "redwood city", "santa clara"],
-  ["new york", "brooklyn", "jersey city"],
-];
+/**
+ * Is the job somewhere you're searching? Places are read as city, province
+ * or state and country (see geo.ts), so "BC" and "British Columbia" are the
+ * same and "Canada" means the whole country.
+ *   local   in the searched area (city & nearby, province, or country)
+ *   remote  remote and open to your country (or North America / anywhere /
+ *           no country stated); US-only remote only when you include it
+ * No location = anywhere.
+ */
+export function matchesWorkplace(
+  job: Pick<SourceJob, "location" | "work_mode">,
+  q: Pick<DiscoverQuery, "location" | "workplace" | "area" | "usRemote">
+): boolean {
+  const search = parseSearchPlace(q.location);
+  const workplace = search.remote ? "remote" : q.workplace;
+  const place = parsePlace(job.location);
+  const remote = isRemote(job, place);
+  if (search.level === "none") return workplace === "remote" ? remote && remoteOpenTo(place, null, q.usRemote) : true;
+  const local = inArea(job.location, place, search, q.area);
+  const openRemote = remote && remoteOpenTo(place, search.country, q.usRemote);
+  if (workplace === "local") return local;
+  if (workplace === "remote") return openRemote || (remote && local);
+  return local || openRemote;
+}
 
-/** "Vancouver, BC" -> every place name that counts as local. */
-export function localPlaces(location: string): string[] {
-  const city = location.split(",")[0].trim().toLowerCase();
-  if (!city) return [];
-  const metro = METROS.find((m) => m.includes(city) || (city === "montreal" && m.includes("montréal")));
-  return metro ?? [city];
+/** Remote by its location ("Remote", "Toronto (Remote)"); the description only counts when there's no location. */
+export function isRemote(job: Pick<SourceJob, "location" | "work_mode">, place: Place = parsePlace(job.location)): boolean {
+  return place.remote || (!(job.location || "").trim() && job.work_mode === "remote");
+}
+
+/** Can someone in `country` take this remote job? */
+export function remoteOpenTo(place: Place, country: Country | null, usRemote: boolean): boolean {
+  // "Remote", "Remote - North America", "Anywhere": no country restriction. "U.S. Anywhere" is still US-only.
+  if (place.countries.size === 0) return true;
+  const home = country ?? "CA";
+  if (place.countries.has(home)) return true;
+  return home !== "US" && usRemote && place.countries.has("US");
 }
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export function isRemote(job: Pick<SourceJob, "location" | "work_mode">): boolean {
-  return job.work_mode === "remote" || /\bremote\b/i.test(job.location || "");
-}
-
-export function isLocal(job: Pick<SourceJob, "location">, places: string[]): boolean {
-  if (!places.length) return true;
-  const loc = (job.location || "").toLowerCase();
-  return places.some((p) => new RegExp(`(^|[^a-z])${esc(p)}([^a-z]|$)`).test(loc));
-}
-
-export function matchesWorkplace(job: SourceJob, q: Pick<DiscoverQuery, "location" | "workplace">): boolean {
-  const places = localPlaces(q.location);
-  if (q.workplace === "remote") return isRemote(job);
-  if (q.workplace === "local") return isLocal(job, places);
-  return isRemote(job) || isLocal(job, places);
+export function inArea(raw: string | null, place: Place, search: SearchPlace, area: Area): boolean {
+  // Searching a province or a country can't be narrowed to a city.
+  const level = search.level === "country" ? "country" : search.level === "region" && area === "city" ? "region" : area;
+  // A place in another country is never local (Richmond, VA is not Richmond, BC).
+  if (search.country && place.countries.size && !place.countries.has(search.country)) return false;
+  if (level === "city") {
+    if (search.unknown) return new RegExp(`(^|[^a-z])${esc(search.unknown)}([^a-z]|$)`, "i").test(raw || "");
+    return metroOf(search.city!).some((c) => place.cities.has(c));
+  }
+  if (level === "region") return Boolean(search.region && place.regions.has(search.region));
+  return Boolean(search.country && place.countries.has(search.country));
 }
 
 export function searchTerms(q: string): string[] {
@@ -76,7 +90,10 @@ export function keywordScore(job: SourceJob, q: string): number {
 }
 
 export function matchesQuery(job: SourceJob, q: DiscoverQuery, now = Date.now()): boolean {
-  if (q.internship && job.employment_type !== "internship") return false;
+  if (q.levels.length) {
+    const level = careerLevel(job);
+    if (!level || !q.levels.includes(level)) return false;
+  }
   if (q.categories.length && !q.categories.some((c) => job.categories.includes(c as never))) return false;
   if (q.days) {
     const t = job.posted_at ? Date.parse(job.posted_at) : NaN;

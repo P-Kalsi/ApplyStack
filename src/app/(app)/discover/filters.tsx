@@ -9,7 +9,8 @@ import { Input, Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { DEFAULT_LOCATION, DEFAULT_RADIUS_KM, RADIUS_OPTIONS } from "@/lib/jobs/sources/params";
+import { DEFAULT_LOCATION } from "@/lib/jobs/sources/params";
+import { parseSearchPlace } from "@/lib/jobs/geo";
 import { refreshSources } from "./actions";
 
 interface SourceOption {
@@ -79,7 +80,20 @@ export function DiscoverFilters({ sources }: { sources: SourceOption[] }) {
       else p.delete("cats");
     });
   };
-  const internship = params.get("internship") === "1";
+  // Career levels: ?level=internship,early (the old ?internship=1 still reads as internships).
+  const levels = new Set((params.get("level") || (params.get("internship") === "1" ? "internship" : "")).split(",").filter(Boolean));
+  const toggleLevel = (value: string) => {
+    const next = new Set(levels);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    setParams((p) => {
+      p.delete("internship");
+      if (next.size) p.set("level", Array.from(next).join(","));
+      else p.delete("level");
+    });
+  };
+  const searchPlace = parseSearchPlace(params.get("location") ?? DEFAULT_LOCATION);
+  const usRemote = params.get("usremote") === "1";
   const work = select("work", "both");
   const source = select("source", "all");
   const sourceInfo = sources.find((s) => s.id === source);
@@ -117,23 +131,35 @@ export function DiscoverFilters({ sources }: { sources: SourceOption[] }) {
           />
         </div>
         <Select
-          value={select("radius", String(DEFAULT_RADIUS_KM))}
-          onChange={(e) => setSelect("radius", String(DEFAULT_RADIUS_KM))(e.target.value)}
-          className="w-full sm:w-40"
-          aria-label="Radius"
-          title="Adzuna searches this radius. Other sources match the city and its metro area."
+          value={searchPlace.level === "country" ? "country" : searchPlace.level === "region" && select("area", "city") === "city" ? "region" : select("area", "city")}
+          onChange={(e) => setSelect("area", "city")(e.target.value)}
+          className="w-full sm:w-44"
+          aria-label="Area"
+          disabled={searchPlace.level === "none" || searchPlace.remote || searchPlace.level === "country"}
+          title="How far around the location counts as local"
         >
-          {RADIUS_OPTIONS.map((r) => (
-            <option key={r} value={r}>
-              Within {r} km
-            </option>
-          ))}
+          <option value="city" disabled={searchPlace.level === "region"}>
+            City & nearby
+          </option>
+          <option value="region">{searchPlace.country === "US" ? "Whole state" : "Whole province"}</option>
+          <option value="country">{searchPlace.country === "US" ? "Whole US" : "All of Canada"}</option>
         </Select>
         <Select value={work} onChange={(e) => setSelect("work", "both")(e.target.value)} className="w-full sm:w-40" aria-label="Remote or local">
           <option value="both">Local + remote</option>
           <option value="local">Local only</option>
           <option value="remote">Remote only</option>
         </Select>
+        {work !== "local" && searchPlace.country !== "US" ? (
+          <label className="flex h-9 items-center gap-1.5 whitespace-nowrap text-xs text-ink-muted" title="Remote jobs only open to people in the US are hidden unless you tick this">
+            <input
+              type="checkbox"
+              checked={usRemote}
+              onChange={() => setParams((p) => (usRemote ? p.delete("usremote") : p.set("usremote", "1")))}
+              className="accent-[rgb(var(--accent))]"
+            />
+            Include US remote
+          </label>
+        ) : null}
         {/* Row break on larger screens: search row, then the rest. */}
         <div className="hidden sm:block sm:h-0 sm:basis-full" aria-hidden />
         <Select value={source} onChange={(e) => setSelect("source", "all")(e.target.value)} className="w-full sm:w-52" aria-label="Source">
@@ -201,8 +227,11 @@ export function DiscoverFilters({ sources }: { sources: SourceOption[] }) {
 
       {/* One scrollable row on phones; wraps on larger screens. */}
       <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-        <FilterChip active={internship} onClick={() => setParams((p) => (internship ? p.delete("internship") : p.set("internship", "1")))}>
-          Internships / co-ops
+        <FilterChip active={levels.has("internship")} onClick={() => toggleLevel("internship")}>
+          Internships & co-ops
+        </FilterChip>
+        <FilterChip active={levels.has("early")} onClick={() => toggleLevel("early")}>
+          New grad / early career
         </FilterChip>
         <span className="mx-1 h-4 w-px shrink-0 bg-line-strong" aria-hidden />
         {JOB_CATEGORIES.map((c) => (

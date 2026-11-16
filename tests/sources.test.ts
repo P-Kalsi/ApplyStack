@@ -11,9 +11,7 @@ process.env.SIMPLIFY_LISTINGS_URL = "https://example.test/listings.json";
 
 import { buildNormalizedJob } from "../src/lib/jobs/normalize";
 import {
-  isLocal,
   keywordScore,
-  localPlaces,
   matchesQuery,
   matchesWorkplace,
   sortJobs,
@@ -32,8 +30,10 @@ const Q: DiscoverQuery = {
   q: "",
   location: "Vancouver, BC",
   radiusKm: 25,
+  area: "city",
   workplace: "both",
-  internship: false,
+  usRemote: false,
+  levels: [],
   categories: [],
   days: null,
   sort: "newest",
@@ -57,26 +57,63 @@ function job(over: Partial<SourceJob> & { title?: string; location?: string | nu
 // Filters
 // ---------------------------------------------------------------------------
 
-test("local means the city or its metro area", () => {
-  assert.ok(localPlaces("Vancouver, BC").includes("burnaby"));
-  assert.deepEqual(localPlaces("Kelowna, BC"), ["kelowna"]);
-  assert.deepEqual(localPlaces(""), []);
-  const places = localPlaces("Vancouver, BC");
-  assert.ok(isLocal({ location: "Burnaby, BC, Canada" }, places));
-  assert.ok(!isLocal({ location: "Toronto, ON" }, places));
-  assert.ok(!isLocal({ location: "Richmond, VA" }, localPlaces("Toronto, ON")), "word match, not substring of Richmond Hill");
+type WQ = Pick<DiscoverQuery, "location" | "workplace" | "area" | "usRemote">;
+const W: WQ = { location: "Vancouver, BC", workplace: "both", area: "city", usRemote: false };
+const shown = (locations: (string | null)[], q: Partial<WQ> = {}) =>
+  locations.filter((l) => matchesWorkplace(job({ location: l }), { ...W, ...q }));
+
+test("local means the city and its metro area, the province, or the country", () => {
+  const places = ["Burnaby, BC, Canada", "CAN - Vancouver", "Victoria, British Columbia", "Toronto, Canada", "Montreal, QC", "Seattle, WA", "Richmond, VA"];
+  assert.deepEqual(shown(places, { workplace: "local" }), ["Burnaby, BC, Canada", "CAN - Vancouver"]);
+  assert.deepEqual(shown(places, { workplace: "local", area: "region" }), ["Burnaby, BC, Canada", "CAN - Vancouver", "Victoria, British Columbia"]);
+  assert.deepEqual(shown(places, { workplace: "local", area: "country" }), ["Burnaby, BC, Canada", "CAN - Vancouver", "Victoria, British Columbia", "Toronto, Canada", "Montreal, QC"]);
+  // Typing a province or a country searches all of it, whatever the area setting.
+  assert.deepEqual(shown(places, { workplace: "local", location: "British Columbia" }), ["Burnaby, BC, Canada", "CAN - Vancouver", "Victoria, British Columbia"]);
+  assert.equal(shown(places, { workplace: "local", location: "Canada" }).length, 5);
+  assert.deepEqual(shown(["Richmond Hill, ON", "Richmond, VA"], { workplace: "local", location: "Toronto, ON" }), ["Richmond Hill, ON"]);
+  assert.deepEqual(shown(["Kelowna, BC", "Vancouver, BC"], { workplace: "local", location: "Kelowna" }), ["Kelowna, BC"]);
+});
+
+test("remote means open to your country: US-only remote only when you ask for it", () => {
+  const remote = ["Remote in Canada", "Remote", "Remote - North America", "US / Canada (Remote)", "U.S. Anywhere", "Washington, DC (Remote)", "Korea (Remote)", "Europe (Remote)"];
+  const open = ["Remote in Canada", "Remote", "Remote - North America", "US / Canada (Remote)"];
+  assert.deepEqual(shown(remote, { workplace: "remote" }), open);
+  assert.deepEqual(shown(remote, { workplace: "remote", usRemote: true }), [...open, "U.S. Anywhere", "Washington, DC (Remote)"]);
+  // "Remote" typed in the location box means remote only.
+  assert.deepEqual(shown(["Vancouver, BC", "Remote - Canada"], { location: "Remote" }), ["Remote - Canada"]);
 });
 
 test("workplace filter: local only, remote only, both", () => {
-  const van = job({ location: "Vancouver, BC" });
-  const remote = job({ location: "Remote in Canada" });
-  const tor = job({ location: "Toronto, ON" });
-  const w = (workplace: DiscoverQuery["workplace"]) =>
-    [van, remote, tor].filter((j) => matchesWorkplace(j, { location: "Vancouver, BC", workplace })).map((j) => j.location);
-  assert.deepEqual(w("local"), ["Vancouver, BC"]);
-  assert.deepEqual(w("remote"), ["Remote in Canada"]);
-  assert.deepEqual(w("both"), ["Vancouver, BC", "Remote in Canada"]);
-  assert.ok(matchesWorkplace(tor, { location: "", workplace: "local" }), "no location = anywhere");
+  const all = ["Vancouver, BC", "Remote in Canada", "Toronto, ON", "San Francisco, CA (Remote)"];
+  assert.deepEqual(shown(all, { workplace: "local" }), ["Vancouver, BC"]);
+  assert.deepEqual(shown(all, { workplace: "remote" }), ["Remote in Canada"]);
+  assert.deepEqual(shown(all), ["Vancouver, BC", "Remote in Canada"]);
+  assert.equal(shown(all, { location: "" }).length, 4, "no location = anywhere");
+});
+
+test("a remote-first description doesn't make an office job remote", () => {
+  const j = buildNormalizedJob({ source: "boards", company: "A", title: "Intern", location: "Toronto, ON", description_text: "We are a remote-first company." });
+  assert.equal(j.work_mode, "onsite");
+  assert.ok(!matchesWorkplace(j, { ...W, workplace: "remote" }));
+});
+
+test("career level: internships, early career, both; senior titles never count", () => {
+  const titles = [
+    "Software Engineering Intern (Summer 2027)",
+    "Co-op Student, Data",
+    "Software Engineer, New Grad",
+    "University Grad Software Engineer 2027",
+    "Junior Developer",
+    "Software Engineer, Early Career (AI)",
+    "Head of Early Career Recruiting",
+    "Senior Software Engineer",
+    "Program Manager, Early Career",
+  ];
+  const pick = (levels: DiscoverQuery["levels"]) => titles.filter((t) => matchesQuery(job({ title: t }), { ...Q, levels }));
+  assert.deepEqual(pick(["internship"]), titles.slice(0, 2));
+  assert.deepEqual(pick(["early"]), titles.slice(2, 6));
+  assert.deepEqual(pick(["internship", "early"]), titles.slice(0, 6));
+  assert.equal(pick([]).length, titles.length);
 });
 
 test("keyword search needs every word; title hits rank highest", () => {
@@ -121,6 +158,10 @@ test("parseDiscoverParams defaults: Vancouver, 25 km, both, 25 per page", () => 
   assert.equal(q.perPage, 50);
   assert.equal(q.page, 3);
   assert.equal(q.query.radiusKm, 25, "unknown radius falls back");
+  assert.deepEqual([p.query.area, p.query.usRemote, p.query.levels], ["city", false, []]);
+  const l = parseDiscoverParams({ level: "early,internship,bogus", area: "country", usremote: "1" });
+  assert.deepEqual([l.query.levels, l.query.area, l.query.usRemote], [["early", "internship"], "country", true]);
+  assert.deepEqual(parseDiscoverParams({ internship: "1" }).query.levels, ["internship"], "old links still work");
   assert.equal(parseDiscoverParams({ per: "7" }).perPage, 25);
 });
 
@@ -137,7 +178,7 @@ test("page numbers and the Showing line", () => {
 // ---------------------------------------------------------------------------
 
 test("adzunaParams: location + radius, remote, internship words, sort", () => {
-  const p = adzunaParams({ ...Q, q: "software", internship: true, days: 14 }, 25);
+  const p = adzunaParams({ ...Q, q: "software", levels: ["internship"], days: 14 }, 25);
   assert.equal(p.get("where"), "Vancouver, BC");
   assert.equal(p.get("distance"), "25");
   assert.equal(p.get("what"), "software");
@@ -151,6 +192,10 @@ test("adzunaParams: location + radius, remote, internship words, sort", () => {
   assert.equal(r.get("what_and"), "remote");
   assert.equal(r.get("sort_by"), "relevance");
   assert.equal(r.get("results_per_page"), "50", "capped at 50");
+  const early = adzunaParams({ ...Q, levels: ["internship", "early"] }, 25);
+  assert.match(early.get("what_or")!, /intern.*graduate/);
+  assert.equal(adzunaParams({ ...Q, area: "region" }, 25).get("where"), "British Columbia");
+  assert.equal(adzunaParams({ ...Q, location: "Canada" }, 25).get("where"), null, "the whole country: no where");
 });
 
 test("mapAdzunaResult keeps the snippet separate from the description", () => {

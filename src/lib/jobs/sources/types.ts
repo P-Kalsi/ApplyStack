@@ -11,15 +11,24 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NormalizedJob } from "../normalize";
 
 export type Workplace = "both" | "local" | "remote";
+/** How far around the searched place counts as local. */
+export type Area = "city" | "region" | "country";
+export type CareerLevel = "internship" | "early";
 export type SortKey = "newest" | "relevance";
 
 export interface DiscoverQuery {
   q: string;
   /** Free text, e.g. "Vancouver, BC". Empty = anywhere. */
   location: string;
+  /** Adzuna's search radius for a city search. */
   radiusKm: number;
+  /** City & nearby, the whole province/state, or the whole country. */
+  area: Area;
   workplace: Workplace;
-  internship: boolean;
+  /** Remote jobs open only to the US (for a search outside the US). */
+  usRemote: boolean;
+  /** Empty = every level. */
+  levels: CareerLevel[];
   categories: string[];
   /** Only jobs posted within this many days. */
   days: number | null;

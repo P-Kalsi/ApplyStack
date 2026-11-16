@@ -15,8 +15,10 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
 ## What it does
 
 - **Discover:** one paged board over several sources: the Simplify internship list, public
-  Greenhouse, Lever and Ashby job boards, and the Adzuna search API. Filters for location, distance,
-  remote, role type and date. Sources are plugins, so adding another job API is one file.
+  Greenhouse, Lever and Ashby job boards, and the Adzuna search API. Filter by career level
+  (internships and co-ops, new grad and early career), area (city and nearby, whole province, all
+  of Canada; "BC" and "British Columbia" are the same place), remote or office, role type and date.
+  Remote jobs show only when they're open to Canada; US-only remote is one checkbox away. Sources are plugins, so adding another job API is one file.
   Settings has ready-made board lists (big intern programs, Canadian tech, AI labs, dev tools),
   so you can scan 70+ companies without looking up board tokens.
 - **Import from anywhere:** a bookmarklet and a paste box turn a LinkedIn, Indeed or company
