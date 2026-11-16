@@ -163,7 +163,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                 <div className="flex flex-wrap gap-1">
                   {match.matchedSkills.length ? (
                     match.matchedSkills.map((s) => (
-                      <Badge key={s} tone="good">
+                      <Badge key={s} tone="mark">
                         {displaySkill(s)}
                       </Badge>
                     ))

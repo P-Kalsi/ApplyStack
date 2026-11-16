@@ -44,7 +44,7 @@ export function Confirm({
       </span>
       {open ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-black/50 p-4 backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 flex animate-overlay-in items-center justify-center overscroll-contain bg-black/50 p-4 backdrop-blur-[2px]"
           onClick={() => setOpen(false)}
           role="presentation"
         >
@@ -52,7 +52,7 @@ export function Confirm({
             role="alertdialog"
             aria-modal="true"
             aria-label={title}
-            className="w-full max-w-sm rounded-lg border border-line bg-surface-raised p-5 shadow-overlay"
+            className="w-full max-w-sm animate-dialog-in rounded-lg border border-line bg-surface-raised p-5 shadow-overlay"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-base font-semibold tracking-tight text-ink">{title}</h3>

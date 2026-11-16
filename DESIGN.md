@@ -1,16 +1,25 @@
 <!--
-ApplyStack adaptation of the Vercel DESIGN.md below (source: VoltAgent/awesome-design-md, design-md/vercel).
-The source describes Vercel's marketing site; ApplyStack is a dense local dashboard, so it takes the system,
-not the hero/mesh-gradient decoration:
-- Fonts: Geist Sans (UI) and Geist Mono (code, numbers, source labels) via next/font/google.
-- Neutrals: true grays (#171717 ink on #fafafa/#ffffff light; #ededed on #0a0a0a/#141414 dark).
-- One accent: blue (#0066d6 light, #4794ff dark) for primary actions, links, focus rings, active nav, selection.
-  No violet, no gradients. Status colours green/amber/red are reserved for match quality and alerts.
-- Every text token passes WCAG AA (4.5:1) on every surface, in both themes. Colours live only as CSS variables
-  in src/app/globals.css, mapped to Tailwind names in tailwind.config.ts.
-- Density: 14px body, 12px smallest content text, 8px grid, 6px radius on controls, 8px on cards,
-  hairline borders, shadows only on overlays (dialogs, toasts).
-- Focus: 2px accent outline, 2px offset, on every interactive element. Touch: 44px targets on coarse pointers.
+ApplyStack's own system, "highlighter on resume paper". The Vercel DESIGN.md below (source:
+VoltAgent/awesome-design-md, design-md/vercel) is kept for reference only; ApplyStack moved off it in
+Nov 2026 because it read as a generic developer dashboard.
+- Fonts: Schibsted Grotesk Variable (UI and headings, @fontsource-variable/schibsted-grotesk) and
+  Geist Mono (code only, from `geist`). Both ship in npm packages, so builds work offline.
+- Neutrals: cool resume-paper grays (#f5f6f3 canvas, #ffffff raised, #191b22 ink); dark is blue-black
+  (#12141a / #1a1d25, #e9eaee ink). Never cream.
+- Accent: fountain-pen ink blue (#2a3bb0 light, #94a0ff dark) for primary actions, links and focus.
+- Highlighter: --mark (#ffe252 light, #dec048 dark) is only ever a background under --mark-ink text.
+  It marks things you truthfully have: matched skills, the current nav item, empty-state icons. The
+  `.hl` class gives it slightly uneven marker edges. Status colours green/amber/red stay for scores
+  and alerts.
+- Every text token passes WCAG AA (4.5:1) on every surface, in both themes. Colours live only as CSS
+  variables in src/app/globals.css, mapped to Tailwind names in tailwind.config.ts.
+- Density: 14px body, 12px smallest content text, 26px/700 page titles, 7px radius on controls, 10px
+  on cards, hairline borders, shadows only on overlays (dialogs, toasts, the auth card).
+- Motion answers actions only: the nav highlighter sweeps under the page you open, pages settle in
+  (220ms), dialogs/menus/toasts ease in, skeletons use a slow sheen. The sign-in page draws its
+  highlighter strokes once on load. All of it is disabled by prefers-reduced-motion.
+- Focus: 2px accent outline, 2px offset, on every interactive element. Touch: 44px targets on coarse
+  pointers.
 -->
 
 ---

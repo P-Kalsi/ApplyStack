@@ -10,7 +10,6 @@ import {
   FileText,
   Database,
   Settings,
-  Layers,
   LogOut,
   Menu,
   MessageSquareText,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./theme-toggle";
+import { LogoMark } from "./logo";
 
 const items = [
   { href: "/discover", label: "Discover", icon: Compass },
@@ -55,10 +55,8 @@ export function AppNav({ email, signOutAction }: { email: string; signOutAction:
           className="mr-2 flex shrink-0 items-center gap-2 rounded-md"
           aria-label="ApplyStack home"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-ink text-surface-raised">
-            <Layers className="h-4 w-4" aria-hidden />
-          </span>
-          <span className="text-[15px] font-semibold tracking-tight text-ink">ApplyStack</span>
+          <LogoMark />
+          <span className="text-base font-bold tracking-tight text-ink">ApplyStack</span>
         </Link>
 
         {/* Desktop: inline links */}
@@ -71,10 +69,12 @@ export function AppNav({ email, signOutAction }: { email: string; signOutAction:
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors",
-                  active ? "bg-accent-soft text-accent" : "text-ink-muted hover:bg-surface-sunken hover:text-ink"
+                  "relative isolate inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors",
+                  active ? "font-semibold text-mark-ink" : "text-ink-muted hover:bg-surface-sunken hover:text-ink"
                 )}
               >
+                {/* Keyed by path so the stroke redraws under each page you open. */}
+                {active ? <span key={pathname} className="nav-mark" aria-hidden /> : null}
                 <Icon className="h-4 w-4" aria-hidden />
                 {label}
               </Link>
@@ -114,7 +114,7 @@ export function AppNav({ email, signOutAction }: { email: string; signOutAction:
         <nav
           id="mobile-nav"
           aria-label="Main"
-          className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto overscroll-contain border-t border-line bg-surface-raised px-4 pb-4 pt-2 shadow-overlay sm:px-6 lg:hidden"
+          className="max-h-[calc(100dvh-3.5rem)] animate-menu-in overflow-y-auto overscroll-contain border-t border-line bg-surface-raised px-4 pb-4 pt-2 shadow-overlay sm:px-6 lg:hidden"
         >
           <ul className="grid gap-1 sm:grid-cols-2">
             {items.map(({ href, label, icon: Icon }) => {
@@ -126,7 +126,7 @@ export function AppNav({ email, signOutAction }: { email: string; signOutAction:
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors",
-                      active ? "bg-accent-soft text-accent" : "text-ink hover:bg-surface-sunken"
+                      active ? "hl font-semibold" : "text-ink hover:bg-surface-sunken"
                     )}
                   >
                     <Icon className="h-4 w-4" aria-hidden />

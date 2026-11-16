@@ -49,13 +49,13 @@ export function JobCard({
   const [isSaved, setIsSaved] = useState(saved);
 
   return (
-    <article className="group flex flex-col gap-3 rounded-lg border border-line bg-surface-raised p-4 transition-[border-color,box-shadow] duration-150 hover:border-line-strong hover:shadow-[0_2px_8px_rgb(0_0_0/0.04)]">
+    <article className="group flex flex-col gap-3 rounded-lg border border-line bg-surface-raised p-4 transition-colors duration-150 hover:border-line-strong">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-ink-muted">{job.company}</p>
           <Link
             href={`/jobs/${job.id}`}
-            className="mt-0.5 line-clamp-2 rounded-sm text-[15px] font-semibold leading-snug tracking-tight text-ink hover:text-accent"
+            className="mt-0.5 line-clamp-2 rounded-sm text-base font-semibold leading-snug tracking-tight text-ink hover:text-accent"
           >
             {job.title}
           </Link>
@@ -98,7 +98,7 @@ export function JobCard({
       {match.matchedSkills.length || match.missingSkills.length ? (
         <div className="flex flex-wrap gap-1">
           {match.matchedSkills.slice(0, 5).map((s) => (
-            <Badge key={s} tone="good" title="You can truthfully claim this skill">
+            <Badge key={s} tone="mark" title="You can truthfully claim this skill">
               <span className="sr-only">Matched skill: </span>
               {displaySkill(s)}
             </Badge>

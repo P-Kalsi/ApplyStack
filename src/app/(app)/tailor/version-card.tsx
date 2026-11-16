@@ -62,7 +62,7 @@ export function VersionCard({
           ) : (
             <Link
               href={`/tailor/review/${version.id}`}
-              className="line-clamp-2 rounded-sm text-[15px] font-semibold leading-snug tracking-tight text-ink hover:text-accent"
+              className="line-clamp-2 rounded-sm text-base font-semibold leading-snug tracking-tight text-ink hover:text-accent"
             >
               {version.name}
             </Link>

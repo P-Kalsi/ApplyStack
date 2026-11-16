@@ -48,16 +48,16 @@ export function EmptyState({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line-strong bg-surface-raised/50 px-6 py-14 text-center">
+    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line-strong bg-surface-raised/50 px-6 py-16 text-center">
       {icon ? (
         <div
-          className="mb-1 flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface-raised text-ink-muted [&_svg]:h-5 [&_svg]:w-5"
+          className="hl mb-2 flex h-11 w-11 items-center justify-center [&_svg]:h-5 [&_svg]:w-5"
           aria-hidden
         >
           {icon}
         </div>
       ) : null}
-      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      <h3 className="text-base font-semibold tracking-tight text-ink">{title}</h3>
       {description ? <p className="max-w-md text-pretty text-xs leading-5 text-ink-muted">{description}</p> : null}
       {action ? <div className="mt-2">{action}</div> : null}
     </div>
@@ -65,5 +65,5 @@ export function EmptyState({
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-md bg-surface-sunken", className)} />;
+  return <div className={cn("skeleton rounded-md", className)} />;
 }
