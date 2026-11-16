@@ -353,3 +353,70 @@ export async function confirmKeyword(input: z.input<typeof ConfirmSchema>): Prom
     return { ok: false, message: err instanceof Error ? err.message : "Couldn't save that." };
   }
 }
+
+const AlertJobsSchema = z
+  .array(
+    z.object({
+      title: z.string().trim().min(1).max(300),
+      company: z.string().trim().min(1).max(200),
+      location: z.string().trim().max(300).default(""),
+      url: z.string().trim().max(2000).nullable().default(null),
+    })
+  )
+  .min(1, "Pick at least one job.")
+  .max(50, "Import at most 50 jobs at a time.");
+
+/**
+ * Add jobs read from a pasted job-alert email. They arrive without a
+ * description, so each is saved straight into Saved Jobs and your pipeline,
+ * where the description can be pasted (or fetched) before analysis.
+ */
+export async function importAlertJobs(input: z.input<typeof AlertJobsSchema>): Promise<AnalyzeResult> {
+  try {
+    const user = await requireUser();
+    const jobs = AlertJobsSchema.parse(input);
+    const supabase = await createClient();
+    let added = 0;
+    let existing = 0;
+    for (const j of jobs) {
+      const url = j.url && /^https?:\/\//i.test(j.url) ? canonicalJobUrl(j.url) : null;
+      const job = buildNormalizedJob({
+        source: (url && siteOf(url)) || "manual",
+        company: j.company,
+        title: j.title,
+        location: j.location || null,
+        url,
+        description_text: null,
+        posted_at: new Date().toISOString(),
+      });
+      const { data: byKey } = await supabase.from("jobs").select("id").eq("dedupe_key", job.dedupe_key).maybeSingle();
+      const { data: byUrl } = url && !byKey ? await supabase.from("jobs").select("id").eq("url", url).limit(1).maybeSingle() : { data: null };
+      let jobId = (byKey ?? byUrl)?.id as string | undefined;
+      if (jobId) existing++;
+      else {
+        const { data: created, error } = await supabase.from("jobs").insert(job).select("id").single();
+        if (error) throw new Error(explainDbError(error.message));
+        jobId = created!.id as string;
+        added++;
+      }
+      const { data: saved } = await supabase.from("saved_jobs").select("id").eq("user_id", user.id).eq("job_id", jobId).maybeSingle();
+      if (!saved) await supabase.from("saved_jobs").insert({ user_id: user.id, job_id: jobId });
+      const { data: app } = await supabase.from("applications").select("id").eq("user_id", user.id).eq("job_id", jobId).maybeSingle();
+      if (!app) {
+        await supabase
+          .from("applications")
+          .insert({ user_id: user.id, job_id: jobId, company: job.company, role: job.title, status: "saved", job_url: url });
+      }
+    }
+    revalidatePath("/saved");
+    revalidatePath("/applications");
+    revalidatePath("/discover");
+    return {
+      ok: true,
+      message: `Saved ${added + existing} job${added + existing === 1 ? "" : "s"}${existing ? ` (${existing} already on your board)` : ""}. Paste each description from Saved Jobs before analyzing.`,
+    };
+  } catch (err) {
+    if (err instanceof z.ZodError) return { ok: false, message: err.issues[0]?.message ?? "Check the list." };
+    return { ok: false, message: err instanceof Error ? err.message : "Couldn't import the jobs." };
+  }
+}

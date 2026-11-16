@@ -22,6 +22,8 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
 - **Import from anywhere:** a bookmarklet and a paste box turn a LinkedIn, Indeed or company
   posting you're looking at into a job in ApplyStack. Nothing is scraped; you send the page
   you already have open.
+  You can also paste a LinkedIn or Indeed job-alert email: every job it lists is saved to your
+  pipeline after you review the list.
 - **AI job analysis:** requirements, ATS keywords and a match score, with each keyword marked
   verified, related or missing based on your Career Vault. If you've done something it marks
   missing, "I've done this" adds it to your fact bank for review.

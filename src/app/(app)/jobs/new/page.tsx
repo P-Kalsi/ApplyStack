@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/supabase/server";
 import { Card, CardHeader } from "@/components/ui/card";
 import { NewJobForm } from "./new-job-form";
 import { BookmarkletCard } from "./bookmarklet-card";
+import { AlertImportCard } from "./alert-import-card";
 
 export const metadata: Metadata = { title: "Add job" };
 
@@ -22,6 +23,13 @@ export default async function NewJobPage() {
           description="From any site, including LinkedIn and Indeed: paste the whole page below, or use the Send to ApplyStack bookmark. Greenhouse, Lever, Ashby and Workday links can also fill in from the link alone."
         />
         <NewJobForm />
+      </Card>
+      <Card>
+        <CardHeader
+          title="From a job-alert email"
+          description="Paste a LinkedIn or Indeed alert email to save every job it lists at once. Nothing is fetched from LinkedIn or Indeed; you add each description later."
+        />
+        <AlertImportCard />
       </Card>
       <Card>
         <CardHeader title="Send to ApplyStack bookmark" description="One click from a LinkedIn or Indeed job to this page." />
