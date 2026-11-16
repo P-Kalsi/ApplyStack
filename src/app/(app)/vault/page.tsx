@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { createClient, requireUser } from "@/lib/supabase/server";
 import { loadVaultSnapshot, vaultIsEmpty } from "@/lib/db/vault";
 import type { MasterResumeRow } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { EducationEditor } from "./sections/education";
 import { ExperiencesEditor } from "./sections/experiences";
 import { ProjectsEditor } from "./sections/projects";
@@ -11,6 +9,7 @@ import { SkillsEditor } from "./sections/skills";
 import { FactsEditor } from "./sections/facts";
 import { ResumeEditor } from "./sections/resume";
 import { VaultOverview } from "./sections/overview";
+import { VaultTabs } from "./tabs";
 
 export const metadata: Metadata = { title: "Career Vault" };
 
@@ -59,32 +58,10 @@ export default async function VaultPage({
         </p>
       </div>
 
-      <nav
-        className="no-print -mx-4 flex gap-1 overflow-x-auto border-b border-line px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0"
-        aria-label="Vault sections"
-      >
-        {TABS.map((t) => (
-          <Link
-            key={t.key}
-            href={`/vault?tab=${t.key}`}
-            aria-current={tab === t.key ? "page" : undefined}
-            className={cn(
-              "-mb-px inline-flex h-10 shrink-0 items-center whitespace-nowrap border-b-2 px-3 text-sm font-medium transition-colors [@media(pointer:coarse)]:h-11",
-              tab === t.key
-                ? "border-accent text-ink"
-                : "border-transparent text-ink-muted hover:border-line-strong hover:text-ink"
-            )}
-          >
-            {t.label}
-            {t.key === "facts" && pendingFacts > 0 ? (
-              <span className="ml-1.5 rounded-full bg-warn/15 px-1.5 text-2xs font-semibold tabular-nums text-warn">
-                {pendingFacts}
-              </span>
-            ) : null}
-          </Link>
-        ))}
-      </nav>
+      <VaultTabs tabs={TABS} active={tab} pendingFacts={pendingFacts} />
 
+      {/* Keyed by tab so each section settles in when you switch to it. */}
+      <div key={tab} className="animate-page-in">
       {tab === "overview" ? (
         <VaultOverview vault={vault} hasMaster={Boolean(master)} isEmpty={vaultIsEmpty(vault)} />
       ) : null}
@@ -98,6 +75,7 @@ export default async function VaultPage({
         <FactsEditor facts={vault.facts} experiences={vault.experiences} projects={vault.projects} />
       ) : null}
       {tab === "resume" ? <ResumeEditor master={master} pendingFacts={pendingFacts} /> : null}
+      </div>
     </div>
   );
 }

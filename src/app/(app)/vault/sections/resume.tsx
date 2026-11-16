@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Input, Label, Textarea } from "@/components/ui/input";
+import { TabIndicator } from "@/components/ui/tab-indicator";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { extractResumeFacts, saveMasterResume, uploadMasterDocx } from "../actions";
@@ -32,7 +33,7 @@ export function ResumeEditor({
     <div className="space-y-3">
       {master ? <CurrentMaster master={master} /> : null}
 
-      <div className="flex gap-1 rounded-md border border-line bg-surface-raised p-0.5 w-fit" role="tablist">
+      <div className="relative isolate flex w-fit gap-1 rounded-md border border-line bg-surface-raised p-0.5" role="tablist">
         {(
           [
             ["docx", "Word (.docx)"],
@@ -42,19 +43,23 @@ export function ResumeEditor({
           <button
             key={value}
             role="tab"
+            data-tab
             aria-selected={mode === value}
             onClick={() => setMode(value)}
             className={cn(
-              "h-8 rounded-[5px] px-3 text-xs font-medium transition-colors",
-              mode === value ? "bg-accent-soft text-accent" : "text-ink-muted hover:text-ink"
+              "relative z-10 h-8 rounded-[5px] px-3 text-xs font-medium transition-colors",
+              mode === value ? "text-accent" : "text-ink-muted hover:text-ink"
             )}
           >
             {label}
           </button>
         ))}
+        <TabIndicator activeIndex={mode === "docx" ? 0 : 1} variant="pill" />
       </div>
 
-      {mode === "docx" ? <DocxUpload /> : <LatexEditor master={master?.format !== "docx" ? master : null} />}
+      <div key={mode} className="animate-page-in">
+        {mode === "docx" ? <DocxUpload /> : <LatexEditor master={master?.format !== "docx" ? master : null} />}
+      </div>
 
       <Card>
         <CardHeader

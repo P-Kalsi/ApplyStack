@@ -130,7 +130,7 @@ export function JobCard({
           aria-pressed={isSaved}
         >
           {isSaved ? (
-            <BookmarkCheck className="h-3.5 w-3.5 text-accent" aria-hidden />
+            <BookmarkCheck className="h-3.5 w-3.5 animate-dialog-in text-accent" aria-hidden />
           ) : (
             <Bookmark className="h-3.5 w-3.5" aria-hidden />
           )}
@@ -139,7 +139,7 @@ export function JobCard({
         {!job.description_text ? (
           <Link
             href={`/jobs/${job.id}`}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line-strong bg-surface-raised px-3 text-xs font-medium text-ink transition-colors hover:border-ink-faint/60 hover:bg-surface-sunken [@media(pointer:coarse)]:min-h-[44px]"
+            className="press inline-flex h-8 items-center gap-1.5 rounded-md border border-line-strong bg-surface-raised px-3 text-xs font-medium text-ink hover:border-ink-faint/60 hover:bg-surface-sunken [@media(pointer:coarse)]:min-h-[44px]"
             title="Open the job to fetch or paste its description"
           >
             <FileSearch className="h-3.5 w-3.5" aria-hidden />
@@ -173,10 +173,13 @@ export function JobCard({
         )}
         <Link
           href={`/jobs/${job.id}`}
-          className="ml-auto inline-flex h-8 items-center gap-0.5 rounded-md pl-2 pr-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink [@media(pointer:coarse)]:min-h-[44px]"
+          className="press group/view ml-auto inline-flex h-8 items-center gap-0.5 rounded-md pl-2 pr-1.5 text-xs font-medium text-ink-muted hover:bg-surface-sunken hover:text-ink [@media(pointer:coarse)]:min-h-[44px]"
         >
           View Job
-          <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+          <ChevronRight
+            className="h-3.5 w-3.5 transition-transform duration-200 group-hover/view:translate-x-0.5"
+            aria-hidden
+          />
         </Link>
       </div>
     </article>
