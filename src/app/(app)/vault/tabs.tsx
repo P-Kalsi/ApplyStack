@@ -1,27 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { PillLabel, SpringPill } from "@/components/ui/spring-pill";
 
 /**
  * Vault section tabs as a segmented bar. The raised pill springs to the tab
- * you click straight away, before the server has sent the new section, and a
- * soft background follows the mouse.
+ * you pick and a soft background follows the mouse. Plain clicks switch in
+ * place via onSelect; modified clicks (new tab, etc.) still follow the link.
  */
 export function VaultTabs({
   tabs,
   active,
   pendingFacts,
+  onSelect,
 }: {
   tabs: readonly { key: string; label: string }[];
   active: string;
   pendingFacts: number;
+  onSelect: (key: string) => void;
 }) {
-  const [current, setCurrent] = useState(active);
   const [hovered, setHovered] = useState<string | null>(null);
-  useEffect(() => setCurrent(active), [active]);
 
   return (
     <nav
@@ -33,14 +33,18 @@ export function VaultTabs({
         onMouseLeave={() => setHovered(null)}
       >
         {tabs.map((t) => {
-          const on = current === t.key;
+          const on = active === t.key;
           return (
             <Link
               key={t.key}
               href={`/vault?tab=${t.key}`}
-              onClick={() => setCurrent(t.key)}
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                e.preventDefault();
+                onSelect(t.key);
+              }}
               onMouseEnter={() => setHovered(t.key)}
-              aria-current={active === t.key ? "page" : undefined}
+              aria-current={on ? "page" : undefined}
               className={cn(
                 "relative inline-flex h-8 shrink-0 items-center whitespace-nowrap px-3 text-sm font-medium transition-colors [@media(pointer:coarse)]:h-10",
                 on ? "text-ink" : "text-ink-muted hover:text-ink"
