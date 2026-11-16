@@ -8,33 +8,47 @@ import { canonicalSkill, extractSkills } from "../jobs/skills";
 import type { BulletBlock } from "../resume/latex";
 import { bulletPlain, latexToPlain } from "../resume/latex";
 import type { MatchReport, TailorChange } from "./schemas";
+import { tidyKeywordEvidence } from "./keywords";
 
 /**
  * Sanitize a match report against the set of skills the vault can truthfully
  * claim and the text of approved facts:
- *  - a keyword marked "verified" must exist in the vault skill set or in an
- *    approved fact's text; otherwise it is downgraded (related/missing)
+ *  - a keyword marked "verified" must exist in the vault skill set, an
+ *    approved fact's text, or (for a field of study) your education; otherwise
+ *    a technology is downgraded to "missing" and anything else to "related"
+ *  - generic keywords are dropped and repeated ones merged (see keywords.ts)
  *  - matched_keywords may never contain vault-missing keywords
  *  - a keyword can never be both matched and missing
  */
 export function sanitizeMatchReport(
   report: MatchReport,
   vaultSkills: Set<string>,
-  approvedFacts: Pick<FactRow, "fact_text">[]
+  approvedFacts: Pick<FactRow, "fact_text">[],
+  education: { degree?: string | null; major?: string | null }[] = []
 ): MatchReport {
   const factBlob = approvedFacts.map((f) => f.fact_text.toLowerCase()).join("\n");
+  const fields = education
+    .flatMap((e) => [e.major, e.degree])
+    .map((s) => (s || "").trim().toLowerCase())
+    .filter((s) => s.length > 2);
   const canClaim = (kw: string): boolean => {
     const c = canonicalSkill(kw);
     if (vaultSkills.has(c)) return true;
-    return factBlob.includes(kw.toLowerCase());
+    const lower = kw.toLowerCase();
+    if (fields.some((f) => lower.includes(f))) return true;
+    return factBlob.includes(lower);
   };
 
-  const evidence = report.keyword_evidence.map((e) => {
-    if (e.status === "verified" && !canClaim(e.keyword)) {
-      return { ...e, status: "missing" as const, evidence: "No supporting Career Vault fact." };
-    }
-    return e;
-  });
+  const evidence = tidyKeywordEvidence(
+    report.keyword_evidence.map((e) => {
+      if (e.status !== "verified" || canClaim(e.keyword)) return e;
+      if (extractSkills(e.keyword).length) {
+        return { ...e, status: "missing" as const, evidence: "No supporting Career Vault fact." };
+      }
+      // Not a technology: the model saw supporting work, but no fact says it outright.
+      return { ...e, status: "related" as const };
+    })
+  );
 
   const matched = Array.from(
     new Set(report.matched_keywords.filter((kw) => canClaim(kw)).map((k) => k.trim()))

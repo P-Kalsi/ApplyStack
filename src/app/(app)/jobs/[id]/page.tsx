@@ -17,6 +17,7 @@ import { DescriptionPanel } from "./description-panel";
 import { canFetchDescription } from "@/lib/jobs/posting";
 import { sourceBadge } from "@/lib/jobs/sources/badges";
 import { canonicalSkill, extractSkills, guessSkillGroup } from "@/lib/jobs/skills";
+import { tidyKeywordEvidence } from "@/lib/ai/keywords";
 import { KeywordEvidence } from "./keyword-evidence";
 
 export const metadata: Metadata = { title: "Job details" };
@@ -283,7 +284,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                 <h3 className="mb-1 font-medium text-ink-muted">Keyword evidence</h3>
                 <KeywordEvidence
                   jobId={job.id}
-                  rows={report.keyword_evidence.map((e) => {
+                  rows={tidyKeywordEvidence(report.keyword_evidence).map((e) => {
                     const skills = extractSkills(e.keyword);
                     const isSkill = skills.length === 1 && canonicalSkill(e.keyword) === skills[0];
                     return { ...e, evidence: withoutIds(e.evidence), isSkill, skillGroup: guessSkillGroup(e.keyword) };

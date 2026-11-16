@@ -4,7 +4,7 @@
 
 import type { FactRow, JobRow } from "../types";
 import type { Ranked } from "../matching/relevance";
-import type { ExperienceRow, ProjectRow } from "../types";
+import type { EducationRow, ExperienceRow, ProjectRow } from "../types";
 import type { BulletBlock } from "../resume/latex";
 import type { ResumeFormat } from "../resume/document";
 import type { JobAnalysis } from "./schemas";
@@ -63,7 +63,8 @@ export function matchPrompt(
   facts: Ranked<FactRow>[],
   projects: Ranked<ProjectRow>[],
   experiences: Ranked<ExperienceRow>[],
-  vaultSkills: string[]
+  vaultSkills: string[],
+  education: Pick<EducationRow, "school" | "degree" | "major" | "expected_graduation">[] = []
 ): BuiltPrompt {
   return {
     system:
@@ -76,6 +77,9 @@ export function matchPrompt(
 
 Parsed job requirements:
 ${JSON.stringify(analysis)}
+
+Candidate's education:
+${education.map((e) => `- ${[e.degree, e.major].filter(Boolean).join(", ")} at ${e.school}${e.expected_graduation ? ` (expected ${e.expected_graduation})` : ""}`).join("\n") || "(none)"}
 
 Candidate's verified skills:
 ${vaultSkills.join(", ") || "(none)"}
@@ -103,6 +107,12 @@ Return JSON with exactly these keys:
   "potential_concerns": string[]
 }
 Do not inflate scores. A missing keyword must never appear in matched_keywords.
+keyword_evidence: at most 12 entries, most important first. Only concrete, checkable requirements:
+languages, frameworks, tools, platforms, degrees or fields of study, certifications, and specific
+domain experience the posting requires. Leave out soft skills and things every developer does
+(code quality, problem solving, ownership, communication, "software engineering"), descriptions
+of the company or its customers, and community involvement. List each requirement once
+(e.g. one "Ruby on Rails" entry, not "Ruby", "Rails" and "Ruby on Rails").
 In "evidence", quote or paraphrase the fact briefly; never print fact ids.`,
   };
 }

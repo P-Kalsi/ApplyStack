@@ -68,7 +68,7 @@ export async function runMatchReport(
     async () => {
       return callStructured(
         MatchReportSchema,
-        matchPrompt(job, analysis, facts, projects, experiences, skills),
+        matchPrompt(job, analysis, facts, projects, experiences, skills, vault.education),
         "fast"
       );
     },
@@ -76,7 +76,7 @@ export async function runMatchReport(
   );
 
   const approvedFacts = vault.facts.filter((f) => f.status === "approved");
-  return { ...run, data: sanitizeMatchReport(run.data, vaultSkillSet(vault), approvedFacts) };
+  return { ...run, data: sanitizeMatchReport(run.data, vaultSkillSet(vault), approvedFacts, vault.education) };
 }
 
 export interface TailorPipelineOutput {
