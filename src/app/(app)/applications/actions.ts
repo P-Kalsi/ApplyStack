@@ -5,6 +5,7 @@ import { createClient, requireUser } from "@/lib/supabase/server";
 import { APPLICATION_STATUSES, type ApplicationStatus } from "@/lib/types";
 import { dedupeKey, importApplicationsCsv } from "@/lib/applications/csv-import";
 import { addDays, followUpNote, SNOOZED } from "@/lib/applications/followups";
+import { readReply, replyNote } from "@/lib/applications/replies";
 
 export interface ActionResult {
   ok: boolean;
@@ -200,5 +201,32 @@ export async function snoozeFollowUp(id: string, days: number): Promise<ActionRe
     return { ok: true, message: `Snoozed until ${date}.` };
   } catch (err) {
     return fail(err, "Couldn't snooze it.");
+  }
+}
+
+/** Apply a pasted employer reply: move the application and note what it said. */
+export async function applyReply(id: string, text: string): Promise<ActionResult> {
+  try {
+    const reading = readReply(text.slice(0, 20_000));
+    if (!reading.kind) return { ok: false, message: "Couldn't tell what this reply means; update the status yourself." };
+    const user = await requireUser();
+    const supabase = await createClient();
+    const { data, error: readError } = await supabase
+      .from("applications")
+      .select("notes, status")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+    if (readError) throw new Error(readError.message);
+    const notes = [String(data?.notes ?? "").trimEnd(), replyNote(localToday(), reading)].filter(Boolean).join("\n");
+    const update: Record<string, unknown> = { notes };
+    if (reading.status && reading.status !== data?.status) update.status = reading.status;
+    const { error } = await supabase.from("applications").update(update).eq("id", id).eq("user_id", user.id);
+    if (error) throw new Error(error.message);
+    revalidatePath("/applications");
+    const label = APPLICATION_STATUSES.find((s) => s.value === reading.status)?.label;
+    return { ok: true, message: label && update.status ? `${reading.label}: moved to ${label}.` : `${reading.label}: noted.` };
+  } catch (err) {
+    return fail(err, "Couldn't apply the reply.");
   }
 }

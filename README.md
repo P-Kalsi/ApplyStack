@@ -52,6 +52,8 @@ devices through Supabase, and can use your existing Claude or ChatGPT plan inste
 - **Follow-ups:** Applications shows which applications are due a nudge (a week after applying,
   again a week later, and after an assessment or interview), each with a short draft to copy.
   Nothing is sent for you; mark it sent and the next one is scheduled.
+- **Replies:** paste an employer's email and ApplyStack reads it (rejection, assessment, interview,
+  offer or just an acknowledgement), shows the sentence it went by, and updates the application.
 - **Outreach:** an application email (with subject and attachment checklist), a referral request,
   a note to the hiring manager, or a 300-character LinkedIn note for a recruiter or an engineer,
   in your voice and from your facts, with the same checks. Nothing is sent for you.
